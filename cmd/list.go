@@ -54,12 +54,11 @@ func displayServers(servers map[string]Service) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Name\tCommand\tImage\tEnvvars\tProfiles")
-	fmt.Fprintln(w, "----\t-------\t-----\t-------\t--------")
+	fmt.Fprintln(w, "Name\tCommand\tEnvvars\tProfiles")
+	fmt.Fprintln(w, "----\t-------\t-------\t--------")
 
 	for name, service := range servers {
 		command := service.Command
-		image := service.Image
 		
 		// Get environment variables
 		var envVars []string
@@ -81,7 +80,7 @@ func displayServers(servers map[string]Service) {
 		}
 		profilesStr := strings.Join(profiles, ", ")
 		
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", name, command, image, envVarsStr, profilesStr)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, command, envVarsStr, profilesStr)
 	}
 	w.Flush()
 }
