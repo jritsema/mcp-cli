@@ -1,0 +1,6 @@
+app
+*.swp
+*.test
+*.out
+.DS_Store
+
