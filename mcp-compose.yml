@@ -16,7 +16,7 @@ services:
   aws-docs:
     command: uvx awslabs.aws-documentation-mcp-server@latest
     environment:
-      FASTMCP_LOG_LEVEL: "ERROR"
+      FASTMCP_LOG_LEVEL: "${FASTMCP_LOG_LEVEL}"
     labels:
       mcp.profile: programming
 
@@ -25,14 +25,13 @@ services:
     labels:
       mcp.profile: database
 
-  # OR container based MCP servers
-
+  # Container based MCP servers
   github-docker:
     image: ghcr.io/github/github-mcp-server
     environment:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}
     labels:
-      mcp.profile: programming
+      mcp.profile: programming, docker
 
   brave:
     image: mcp/brave-search
