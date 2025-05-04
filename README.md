@@ -21,10 +21,11 @@ MCP CLI simplifies managing MCP server configurations through a YAML-based appro
 
 ### Getting Started
 
-1. Create an [mcp-compose.yml](./mcp-compose.yml) file in your home directory with your MCP server configurations.  See example below, or copy the included example file.
+1. Create an [mcp-compose.yml](./mcp-compose.yml) file in `$HOME/.config/mcp/mcp-compose.yml` with your MCP server configurations.  See example below, or copy the included example file.
 
 ```sh
-cp ./mcp-compose.yml ~/
+mkdir -p ~/.config/mcp
+cp ./mcp-compose.yml $HOME/.config/mcp/
 ```
 
 2. Use the CLI to manage and deploy these configurations to your favorite AI tools
@@ -70,6 +71,14 @@ mcp set -t claude-desktop -s github
 mcp set -c /path/to/output/mcp.json
 ```
 
+### Tool Shortcuts
+
+MCP CLI supports these predefined tool shortcuts:
+
+- `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
+- `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
+- `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
+
 ### Setting Default Tool
 
 Configure a default tool to avoid specifying `-t` each time:
@@ -80,17 +89,10 @@ mcp config set tool ~/.aws/amazonq/mcp.json
 
 # Now you can simply run:
 mcp set programming
+
 # or to switch back to defaults
 mcp set
 ```
-
-### Tool Shortcuts
-
-MCP CLI supports these predefined tool shortcuts:
-
-- `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
-- `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
-- `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
 
 ### Profiles
 
@@ -98,6 +100,14 @@ Organize your MCP servers with profiles using the `labels` field in your `mcp-co
 
 ```yaml
 services:
+
+  brave:
+    image: mcp/brave-search
+    environment:
+      BRAVE_API_KEY: ${BRAVE_API_KEY}
+    labels:
+      mcp.profile: research
+
   github:
     command: npx -y @modelcontextprotocol/server-github
     labels:
@@ -107,7 +117,7 @@ services:
 Then deploy only those servers:
 
 ```sh
-mcp set programming -t q-cli
+mcp set programming -t claude-desktop
 ```
 
 Services without the label are considered defaults.
@@ -115,7 +125,7 @@ Services without the label are considered defaults.
 
 ## How?
 
-So turns out that the Docker Compose (`docker-compose.yml`) specification already has good support for MCP stdio configuration where services map to MCP servers with `command`s, `image`s, `environment`s/`env_files`s, and `label`s for profiles. Another added benefit of this is you can run `docker compose pull -f mcp-compose.yml` and it will pre-fetch all the container images.
+It turns out that the Docker Compose (`docker-compose.yml`) specification already has good support for MCP stdio configuration where services map to MCP servers with `command`s, `image`s, `environment`s/`env_files`s, and `label`s for profiles. Another added benefit of this is you can run `docker compose pull -f mcp-compose.yml` and it will pre-fetch all the container images.
 
 Example:
 

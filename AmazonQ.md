@@ -102,10 +102,10 @@ example output `mcp ls programming`
 | brave         | docker rm -i --rm -e BRAVE_API_KEY mcp/brave-search                                 | BRAVE_API_KEY                | programming, research |
 
 
-- By default the tool should look for the `mcp-compose.yml` file in the user's `$HOME` directory, however the location can be overridden using the `-f` flag. for example:
+- By default the tool should look for the `mcp-compose.yml` file in the MCP CLI home directory, which is `$HOME/.config/mcp/`, however the location can be overridden using the `-f` flag. for example:
 
 ```
-mcp ls -f ./mcp.json
+mcp ls -f ./mcp-compose.yml
 ```
 
 ### Setting configurations
