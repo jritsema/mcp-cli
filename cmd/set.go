@@ -171,9 +171,8 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 		if len(service.Environment) > 0 {
 			expandedEnv := make(map[string]string)
 			for key, value := range service.Environment {
-				// For the env field in the output JSON, we want to preserve the variable references
-				// so they can be expanded at runtime by the MCP server
-				expandedEnv[key] = value
+				// Expand environment variables in the output JSON
+				expandedEnv[key] = expandEnvVars(value, envVars)
 			}
 			mcpServer.Env = expandedEnv
 		}
