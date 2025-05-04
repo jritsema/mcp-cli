@@ -123,34 +123,46 @@ func filterServers(config *ComposeConfig, profile string, all bool) map[string]S
 	}
 
 	for name, service := range config.Services {
+		// Check if this is a default server (no profile or has "default" in profile)
+		isDefault := false
+		profileStr, hasProfile := service.Labels["mcp.profile"]
+		
+		if !hasProfile {
+			// No profile specified, consider it default
+			isDefault = true
+		} else {
+			// Check if it has "default" in its profile
+			profiles := strings.Split(profileStr, ",")
+			for _, p := range profiles {
+				if strings.TrimSpace(p) == "default" {
+					isDefault = true
+					break
+				}
+			}
+		}
+
 		if profile == "" {
-			// Default profile - include servers with no profile or with "default" in their profile
-			profileStr, hasProfile := service.Labels["mcp.profile"]
-			if !hasProfile {
-				// No profile specified, consider it default
+			// Only include default servers when no specific profile is requested
+			if isDefault {
+				result[name] = service
+			}
+		} else {
+			// When a specific profile is requested, include both:
+			// 1. Default servers
+			// 2. Servers with the requested profile
+			if isDefault {
 				result[name] = service
 				continue
 			}
 
-			profiles := strings.Split(profileStr, ",")
-			for _, p := range profiles {
-				if strings.TrimSpace(p) == "default" {
-					result[name] = service
-					break
-				}
-			}
-		} else {
-			// Specific profile
-			profileStr, hasProfile := service.Labels["mcp.profile"]
-			if !hasProfile {
-				continue
-			}
-
-			profiles := strings.Split(profileStr, ",")
-			for _, p := range profiles {
-				if strings.TrimSpace(p) == profile {
-					result[name] = service
-					break
+			// Check if server has the requested profile
+			if hasProfile {
+				profiles := strings.Split(profileStr, ",")
+				for _, p := range profiles {
+					if strings.TrimSpace(p) == profile {
+						result[name] = service
+						break
+					}
 				}
 			}
 		}
