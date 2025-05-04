@@ -32,7 +32,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	defaultComposeFile := filepath.Join(homeDir, "mcp-compose.yml")
+	defaultComposeFile := filepath.Join(homeDir, ".config", "mcp", "mcp-compose.yml")
 
 	rootCmd.PersistentFlags().StringVarP(&composeFile, "file", "f", defaultComposeFile, "Path to the mcp-compose.yml file")
 }
