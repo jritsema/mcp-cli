@@ -7,11 +7,10 @@ MCP CLI is a tool for managing MCP server configuration files.
 Model Context Protocol (MCP) is a new technology and still evolving.  As I've been using it, I have encountered several pain points:
 
 - Manually editing JSON files
+- Managing similar config files for different AI tools
 - Dealing with secret envvars
 - Experimenting with new MCP servers
-- Writing my own MCP servers
 - Switching between different configurations based on what I'm doing (e.g., programming, writing, researching)
-- Lack of server profiles
 
 I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it.  This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
 
@@ -87,7 +86,7 @@ mcp clear -c /path/to/output/mcp.json
 
 ### Tool Shortcuts
 
-MCP CLI supports these predefined tool shortcuts:
+MCP CLI supports these predefined tool shortcuts for popular AI tools:
 
 - `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
 - `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
