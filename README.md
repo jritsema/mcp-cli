@@ -67,6 +67,20 @@ mcp set -t claude-desktop -s github
 mcp set -c /path/to/output/mcp.json
 ```
 
+### Setting Default Tool
+
+Configure a default tool to avoid specifying `-t` each time:
+
+```sh
+# Set Amazon Q CLI as your default tool
+mcp config set tool ~/.aws/amazonq/mcp.json
+
+# Now you can simply run:
+mcp set programming
+# or
+mcp set
+```
+
 ### Tool Shortcuts
 
 MCP CLI supports these predefined tool shortcuts:
