@@ -7,6 +7,7 @@ MCP CLI is a tool for managing MCP server configuration files.
 Model Context Protocol (MCP) is a new technology and still evolving.  As I've been using it, I have encountered several pain points:
 
 - Manually editing JSON files
+- Dealing with secret envvars
 - Experimenting with new MCP servers
 - Writing my own MCP servers
 - Switching between different configurations based on what I'm doing (e.g., programming, writing, researching)
