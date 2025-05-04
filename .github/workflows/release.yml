@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ fix-github-actions ]
 
 jobs:
   build:
@@ -32,19 +32,19 @@ jobs:
 
       - name: Build for macOS (AMD64)
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o mcp-darwin-amd64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" ./...
+          GOOS=darwin GOARCH=amd64 go build -o mcp-darwin-amd64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" .
           chmod +x mcp-darwin-amd64
           zip -j mcp-darwin-amd64.zip mcp-darwin-amd64
 
       - name: Build for macOS (ARM64)
         run: |
-          GOOS=darwin GOARCH=arm64 go build -o mcp-darwin-arm64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" ./...
+          GOOS=darwin GOARCH=arm64 go build -o mcp-darwin-arm64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" .
           chmod +x mcp-darwin-arm64
           zip -j mcp-darwin-arm64.zip mcp-darwin-arm64
 
       - name: Build for Linux (AMD64)
         run: |
-          GOOS=linux GOARCH=amd64 go build -o mcp-linux-amd64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" ./...
+          GOOS=linux GOARCH=amd64 go build -o mcp-linux-amd64 -ldflags="-X 'main.Version=${{ env.VERSION }}'" .
           chmod +x mcp-linux-amd64
           zip -j mcp-linux-amd64.zip mcp-linux-amd64
 
