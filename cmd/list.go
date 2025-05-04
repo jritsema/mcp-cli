@@ -54,49 +54,67 @@ func displayServers(servers map[string]Service) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Name\tProfiles\tCommand\tEnvvars")
+	fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND\tENVVARS")
 	fmt.Fprintln(w, "----\t--------\t-------\t-------")
 
-	for name, service := range servers {
-		var commandStr string
-		
-		if service.Image != "" {
-			// For image-based servers, show the docker run command format
-			commandStr = fmt.Sprintf("docker run -it --rm")
-			
-			// Add environment variables to the command
-			for key := range service.Environment {
-				commandStr += fmt.Sprintf(" -e %s", key)
-			}
-			
-			// Add the image name
-			commandStr += fmt.Sprintf(" %s", service.Image)
-		} else {
-			// For command-based servers, show the command
-			commandStr = service.Command
+	// Get the original order from the compose file
+	config, err := loadComposeFile(composeFile)
+	if err != nil {
+		// If we can't load the file again, just use the map order
+		for name, service := range servers {
+			printServerRow(w, name, service)
 		}
-		
-		// Get environment variables
-		var envVars []string
-		for key := range service.Environment {
-			envVars = append(envVars, key)
-		}
-		envVarsStr := strings.Join(envVars, ", ")
-		
-		// Get profiles
-		var profiles []string
-		if profilesStr, ok := service.Labels["mcp.profile"]; ok {
-			profiles = strings.Split(profilesStr, ",")
-			for i, p := range profiles {
-				profiles[i] = strings.TrimSpace(p)
+	} else {
+		// Use the original order from the compose file
+		for name := range config.Services {
+			if _, exists := servers[name]; exists {
+				printServerRow(w, name, servers[name])
 			}
 		}
-		if len(profiles) == 0 {
-			profiles = append(profiles, "default")
-		}
-		profilesStr := strings.Join(profiles, ", ")
-		
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr)
 	}
+	
 	w.Flush()
+}
+
+// Helper function to print a single server row
+func printServerRow(w *tabwriter.Writer, name string, service Service) {
+	var commandStr string
+	
+	if service.Image != "" {
+		// For image-based servers, show the docker run command format
+		commandStr = fmt.Sprintf("docker run -it --rm")
+		
+		// Add environment variables to the command
+		for key := range service.Environment {
+			commandStr += fmt.Sprintf(" -e %s", key)
+		}
+		
+		// Add the image name
+		commandStr += fmt.Sprintf(" %s", service.Image)
+	} else {
+		// For command-based servers, show the command
+		commandStr = service.Command
+	}
+	
+	// Get environment variables
+	var envVars []string
+	for key := range service.Environment {
+		envVars = append(envVars, key)
+	}
+	envVarsStr := strings.Join(envVars, ", ")
+	
+	// Get profiles
+	var profiles []string
+	if profilesStr, ok := service.Labels["mcp.profile"]; ok {
+		profiles = strings.Split(profilesStr, ",")
+		for i, p := range profiles {
+			profiles[i] = strings.TrimSpace(p)
+		}
+	}
+	if len(profiles) == 0 {
+		profiles = append(profiles, "default")
+	}
+	profilesStr := strings.Join(profiles, ", ")
+	
+	fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr)
 }
