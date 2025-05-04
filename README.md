@@ -12,9 +12,7 @@ Model Context Protocol (MCP) is a new technology and still evolving.  As I've be
 - Switching between different configurations based on what I'm doing (e.g., programming, writing, researching)
 - Lack of server profiles
 
-## What?
-
-I decided to write up some specs for a tool that could help with these pain points and "vibe code" it in a couple of hours. Please don't judge the code quality. I didn't write or edit a single line :)
+I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it.  This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
 
 ## Usage
 
@@ -22,13 +20,17 @@ MCP CLI simplifies managing MCP server configurations through a YAML-based appro
 
 ### Getting Started
 
-1. Create an `mcp-compose.yml` file in your home directory with your MCP server configurations.  See example below, or copy the example file.
+1. Create an [mcp-compose.yml](./mcp-compose.yml) file in your home directory with your MCP server configurations.  See example below, or copy the included example file.
 
 ```sh
 cp ./mcp-compose.yml ~/
 ```
 
 2. Use the CLI to manage and deploy these configurations to your favorite AI tools
+
+```sh
+mcp set -t q-cli # or -t cursor, -t claude-desktop
+```
 
 
 ### Listing MCP Servers
@@ -77,7 +79,7 @@ mcp config set tool ~/.aws/amazonq/mcp.json
 
 # Now you can simply run:
 mcp set programming
-# or
+# or to switch back to defaults
 mcp set
 ```
 
@@ -106,6 +108,9 @@ Then deploy only those servers:
 ```sh
 mcp set programming -t q-cli
 ```
+
+Services without the label are considered defaults.
+
 
 ## How?
 
