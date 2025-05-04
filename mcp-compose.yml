@@ -1,10 +1,15 @@
 services:
 
+  # default mcp servers
+
   time:
-    command: uvx mcp-server-time
+    command: uvx mcp-server-time --local-timezone=America/New_York
 
   fetch:
     command: uvx mcp-server-fetch
+
+
+  # programming
 
   github:
     command: npx -y @modelcontextprotocol/server-github
@@ -23,9 +28,11 @@ services:
   postgres:
     command: npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb
     labels:
-      mcp.profile: database
+      mcp.profile: programming, database
+
 
   # Container based MCP servers
+
   github-docker:
     image: ghcr.io/github/github-mcp-server
     environment:
