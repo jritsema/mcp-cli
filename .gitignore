@@ -4,3 +4,4 @@ app
 *.out
 .DS_Store
 mcp
+.env

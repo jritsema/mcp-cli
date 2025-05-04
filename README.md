@@ -14,7 +14,7 @@ Model Context Protocol (MCP) is a new technology and still evolving.  As I've be
 
 ## What?
 
-I decided to write up some specs for a tool that could help with these pain points and "vibe code" it in a couple of hours.
+I decided to write up some specs for a tool that could help with these pain points and "vibe code" it in a couple of hours. Please don't judge the code quality. I didn't write or edit a single line :)
 
 ## Usage
 
