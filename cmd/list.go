@@ -54,23 +54,15 @@ func displayServers(servers map[string]Service) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Name\tProfiles\tCommand\tEnvvars")
-	fmt.Fprintln(w, "----\t--------\t-------\t-------")
+	fmt.Fprintln(w, "Name\tProfiles\tCommand/Image\tEnvvars")
+	fmt.Fprintln(w, "----\t--------\t-------------\t-------")
 
 	for name, service := range servers {
 		var commandStr string
 		
 		if service.Image != "" {
-			// For image-based servers, show the docker run command
-			commandStr = "docker run -i --rm"
-			
-			// Add environment variables to the command
-			for key, value := range service.Environment {
-				commandStr += fmt.Sprintf(" -e %s=%s", key, value)
-			}
-			
-			// Add the image
-			commandStr += " " + service.Image
+			// For image-based servers, show the image
+			commandStr = service.Image
 		} else {
 			// For command-based servers, show the command
 			commandStr = service.Command

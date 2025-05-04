@@ -12,8 +12,15 @@ var clearCmd = &cobra.Command{
 	Short: "Clear all MCP servers from configuration",
 	Long:  `Remove all MCP servers from the output MCP JSON configuration file.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Load environment variables
+		envVars, err := loadEnvVars(composeFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading environment variables: %v\n", err)
+			os.Exit(1)
+		}
+
 		// Determine the output file path
-		outputPath, err := getOutputPath()
+		outputPath, err := getOutputPath(envVars)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error determining output path: %v\n", err)
 			os.Exit(1)

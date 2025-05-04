@@ -36,13 +36,20 @@ If no profile is specified, it uses default servers.`,
 			os.Exit(1)
 		}
 
+		// Load environment variables
+		envVars, err := loadEnvVars(composeFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading environment variables: %v\n", err)
+			os.Exit(1)
+		}
+
 		var profile string
 		if len(args) > 0 {
 			profile = args[0]
 		}
 
 		// Determine the output file path
-		outputPath, err := getOutputPath()
+		outputPath, err := getOutputPath(envVars)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error determining output path: %v\n", err)
 			os.Exit(1)
@@ -62,7 +69,7 @@ If no profile is specified, it uses default servers.`,
 		}
 
 		// Convert to MCP JSON format
-		mcpConfig := convertToMCPConfig(servers)
+		mcpConfig := convertToMCPConfig(servers, envVars)
 
 		// Write to file
 		if err := writeMCPConfig(mcpConfig, outputPath); err != nil {
@@ -81,9 +88,9 @@ func init() {
 	setCmd.Flags().StringVarP(&singleServer, "server", "s", "", "Specify a single server to include")
 }
 
-func getOutputPath() (string, error) {
+func getOutputPath(envVars map[string]string) (string, error) {
 	if configFile != "" {
-		return configFile, nil
+		return expandEnvVars(configFile, envVars), nil
 	}
 
 	if toolShortcut != "" {
@@ -123,7 +130,7 @@ type MCPServer struct {
 	Env     map[string]string `json:"env,omitempty"`
 }
 
-func convertToMCPConfig(servers map[string]Service) MCPConfig {
+func convertToMCPConfig(servers map[string]Service, envVars map[string]string) MCPConfig {
 	mcpServers := make(map[string]MCPServer)
 
 	for name, service := range servers {
@@ -134,12 +141,15 @@ func convertToMCPConfig(servers map[string]Service) MCPConfig {
 			mcpServer.Command = "docker"
 			args := []string{"run", "-i", "--rm"}
 
-			// Add environment variables
+			// Add environment variables with expanded values
 			for key, value := range service.Environment {
-				args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
+				expandedValue := expandEnvVars(value, envVars)
+				args = append(args, "-e", fmt.Sprintf("%s=%s", key, expandedValue))
 			}
 
-			args = append(args, service.Image)
+			// Expand image name if it contains env vars
+			expandedImage := expandEnvVars(service.Image, envVars)
+			args = append(args, expandedImage)
 			mcpServer.Args = args
 		} else {
 			// Command-based server
@@ -147,14 +157,25 @@ func convertToMCPConfig(servers map[string]Service) MCPConfig {
 			if len(parts) > 0 {
 				mcpServer.Command = parts[0]
 				if len(parts) > 1 {
-					mcpServer.Args = parts[1:]
+					// Expand environment variables in args
+					expandedArgs := make([]string, 0, len(parts)-1)
+					for _, arg := range parts[1:] {
+						expandedArgs = append(expandedArgs, expandEnvVars(arg, envVars))
+					}
+					mcpServer.Args = expandedArgs
 				}
 			}
 		}
 
-		// Add environment variables
+		// Add environment variables with expanded values
 		if len(service.Environment) > 0 {
-			mcpServer.Env = service.Environment
+			expandedEnv := make(map[string]string)
+			for key, value := range service.Environment {
+				// For the env field in the output JSON, we want to preserve the variable references
+				// so they can be expanded at runtime by the MCP server
+				expandedEnv[key] = value
+			}
+			mcpServer.Env = expandedEnv
 		}
 
 		mcpServers[name] = mcpServer
