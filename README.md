@@ -4,7 +4,7 @@ MCP CLI is a tool for managing MCP server configuration files.
 
 ## Why?
 
-MCP is a new technology and still evolving and as I've been using it, I have a felt several pain points:
+Model Context Protocol (MCP) is a new technology and still evolving.  As I've been using it, I have encountered several pain points:
 
 - Manually editing JSON files
 - Experimenting with new MCP servers
@@ -15,6 +15,83 @@ MCP is a new technology and still evolving and as I've been using it, I have a f
 ## What?
 
 I decided to write up some specs for a tool that could help with these pain points and "vibe code" it in a couple of hours.
+
+## Usage
+
+MCP CLI simplifies managing MCP server configurations through a YAML-based approach.
+
+### Getting Started
+
+1. Create an `mcp-compose.yml` file in your home directory with your MCP server configurations.  See example below, or copy the example file.
+
+```sh
+cp ./mcp-compose.yml ~/
+```
+
+2. Use the CLI to manage and deploy these configurations to your favorite AI tools
+
+
+### Listing MCP Servers
+
+View available MCP servers defined in your configuration:
+
+```sh
+# List default MCP servers
+mcp ls
+
+# List all MCP servers
+mcp ls -a
+
+# List servers with specific profile
+mcp ls programming
+
+# Use a custom configuration file
+mcp ls -f ./custom-mcp-compose.yml
+```
+
+### Setting MCP Configurations
+
+Deploy your MCP server configurations to supported tools:
+
+```sh
+# Set default servers for Amazon Q CLI
+mcp set -t q-cli
+
+# Set programming profile servers for Cursor
+mcp set programming -t cursor
+
+# Set a specific server for Claude Desktop
+mcp set -t claude-desktop -s github
+
+# Use a custom output location
+mcp set -c /path/to/output/mcp.json
+```
+
+### Tool Shortcuts
+
+MCP CLI supports these predefined tool shortcuts:
+
+- `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
+- `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
+- `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
+
+### Profiles
+
+Organize your MCP servers with profiles using the `labels` field in your `mcp-compose.yml`:
+
+```yaml
+services:
+  github:
+    command: npx -y @modelcontextprotocol/server-github
+    labels:
+      mcp.profile: programming
+```
+
+Then deploy only those servers:
+
+```sh
+mcp set programming -t q-cli
+```
 
 ## How?
 
@@ -70,10 +147,6 @@ services:
 ```
 
 ## Development
-
-```sh
-go mod init app
-```
 
 ```
  Choose a make command to run
