@@ -52,7 +52,7 @@ services:
     environment:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
-      mcp.profile: programming, researcservices
+      mcp.profile: programming, research
 ```
 
 
@@ -66,40 +66,40 @@ The tool should have the following commands:
 
 example output
 
-| Name  | Command                                                                | Image | Envvars | Profiles             |
-| ----- | ---------------------------------------------------------------------- | ----- | ------- | -------------------- |
-| time  | uvx mcp-server-time                                                    |       |         | default              |
-| fetch | uvx mcp-server-fetch                                                   |       |         | default              |
-| fs    | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop |       |         | default, programming |
+| NAME  | PROFILES             | COMMAND                                                                | ENVVARS |
+| ----- | -------------------- | ---------------------------------------------------------------------- | ------- |
+| time  | default              | uvx mcp-server-time                                                    |         |
+| fetch | default              | uvx mcp-server-fetch                                                   |         |
+| fs    | default, programming | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop |         |
 
 
 - `mcp ls -a` - lists all mcp servers in `mcp-compose.yml`
 
 example output
 
-| Name          | Command                                                                             | Envvars                      | Profiles              |
-|---------------|-------------------------------------------------------------------------------------|------------------------------|-----------------------|
-| time          | uvx mcp-server-time                                                                 |                              | default               |
-| fetch         | uvx mcp-server-fetch                                                                |                              | default               |
-| fs            | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop              |                              | default, programming  |
-| github        | npx -y @modelcontextprotocol/server-github                                          | GITHUB_PERSONAL_ACCESS_TOKEN | programming           |
-| aws-docs      | uvx awslabs.aws-documentation-mcp-server@latest                                     | FASTMCP_LOG_LEVEL            | programming           |
-| postgres      | npx -y @modelcontextprotocol/server-postgres                                        |                              | database              |
-| github-docker | docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server | GITHUB_PERSONAL_ACCESS_TOKEN | programming           |
-| brave         | docker rm -i --rm -e BRAVE_API_KEY mcp/brave-search                                 | BRAVE_API_KEY                | programming, research |
+| NAME          | PROFILES              | COMMAND                                                                             | ENVVARS                      |
+|---------------|-----------------------|-------------------------------------------------------------------------------------|------------------------------|
+| time          | default               | uvx mcp-server-time                                                                 |                              |
+| fetch         | default               | uvx mcp-server-fetch                                                                |                              |
+| fs            | default, programming  | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop              |                              |
+| github        | programming           | npx -y @modelcontextprotocol/server-github                                          | GITHUB_PERSONAL_ACCESS_TOKEN |
+| aws-docs      | programming           | uvx awslabs.aws-documentation-mcp-server@latest                                     | FASTMCP_LOG_LEVEL            |
+| postgres      | database              | npx -y @modelcontextprotocol/server-postgres                                        |                              |
+| github-docker | programming           | docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server | GITHUB_PERSONAL_ACCESS_TOKEN |
+| brave         | programming, research | docker run -i --rm -e BRAVE_API_KEY mcp/brave-search                                | BRAVE_API_KEY                |
 
 
 - `mcp ls <profile>` - lists all mcp servers in `mcp-compose.yml` with a `label` of `<profile>`
 
 example output `mcp ls programming`
 
-| Name          | Command                                                                             | Envvars                      | Profiles              |
-|---------------|-------------------------------------------------------------------------------------|------------------------------|-----------------------|
-| fs            | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop              |                              | default, programming  |
-| github        | npx -y @modelcontextprotocol/server-github                                          | GITHUB_PERSONAL_ACCESS_TOKEN | programming           |
-| aws-docs      | uvx awslabs.aws-documentation-mcp-server@latest                                     | FASTMCP_LOG_LEVEL            | programming           |
-| github-docker | docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server | GITHUB_PERSONAL_ACCESS_TOKEN | programming           |
-| brave         | docker rm -i --rm -e BRAVE_API_KEY mcp/brave-search                                 | BRAVE_API_KEY                | programming, research |
+| NAME          | PROFILES              | COMMAND                                                                             | ENVVARS                      |
+|---------------|-----------------------|-------------------------------------------------------------------------------------|------------------------------|
+| fs            | default, programming  | npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop              |                              |
+| github        | programming           | npx -y @modelcontextprotocol/server-github                                          | GITHUB_PERSONAL_ACCESS_TOKEN |
+| aws-docs      | programming           | uvx awslabs.aws-documentation-mcp-server@latest                                     | FASTMCP_LOG_LEVEL            |
+| github-docker | programming           | docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server | GITHUB_PERSONAL_ACCESS_TOKEN |
+| brave         | programming, research | docker run -i --rm -e BRAVE_API_KEY mcp/brave-search                                | BRAVE_API_KEY                |
 
 
 - By default the tool should look for the `mcp-compose.yml` file in the MCP CLI home directory, which is `$HOME/.config/mcp/`, however the location can be overridden using the `-f` flag. for example:
@@ -147,6 +147,19 @@ And then switch back to the defaults when you're done testing
 mcp set -t q-cli
 Wrote /Users/john/.aws/amazonq/mcp.json
 ```
+
+### Clearing configurations
+
+- `mcp clear -t <tool>` or `mcp clear -c <mcp.json>` - removes all MCP servers from the specified configuration file.
+
+Example output:
+
+```
+mcp clear -t q-cli
+Cleared all servers from /Users/john/.aws/amazonq/mcp.json
+```
+
+### Setting default tool
 
 - `mcp config set tool ~/.aws/amazonq/mcp.json` - this command sets the `tool` config value in the MCP CLI's config file located in `~/.config/mcp/config.json`.  This file looks like:
 

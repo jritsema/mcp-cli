@@ -53,6 +53,8 @@ mcp ls programming
 mcp ls -f ./custom-mcp-compose.yml
 ```
 
+The output format shows NAME, PROFILES, COMMAND, and ENVVARS columns.
+
 ### Setting MCP Configurations
 
 Deploy your MCP server configurations to supported tools:
@@ -69,6 +71,18 @@ mcp set -t claude-desktop -s github
 
 # Use a custom output location
 mcp set -c /path/to/output/mcp.json
+```
+
+### Clearing MCP Configurations
+
+Remove all MCP servers from a configuration:
+
+```sh
+# Clear all servers from Amazon Q CLI configuration
+mcp clear -t q-cli
+
+# Clear from a custom output location
+mcp clear -c /path/to/output/mcp.json
 ```
 
 ### Tool Shortcuts

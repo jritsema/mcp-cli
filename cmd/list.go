@@ -82,7 +82,7 @@ func printServerRow(w *tabwriter.Writer, name string, service Service) {
 	
 	if service.Image != "" {
 		// For image-based servers, show the docker run command format
-		commandStr = fmt.Sprintf("docker run -it --rm")
+		commandStr = fmt.Sprintf("docker run -i --rm")
 		
 		// Add environment variables to the command
 		for key := range service.Environment {
