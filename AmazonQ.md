@@ -148,6 +148,24 @@ mcp set -t q-cli
 Wrote /Users/john/.aws/amazonq/mcp.json
 ```
 
+- `mcp config set tool ~/.aws/amazonq/mcp.json` - this command sets the `tool` config value in the MCP CLI's config file located in `~/.config/mcp/config.json`.  This file looks like:
+
+```json
+{
+  "tool": "/Users/<user>/.aws/amazonq/mcp.json"  
+}
+```
+
+After setting this default tool, you no longer need to specify the `-t` flag.
+
+```
+mcp set programming
+
+# then switch back to defaults
+mcp set
+```
+
+
 ## Output
 
 The output MCP JSON file would look like this.
