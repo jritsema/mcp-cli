@@ -115,7 +115,26 @@ func getOutputPath(envVars map[string]string) (string, error) {
 		return path, nil
 	}
 
-	return "", fmt.Errorf("either --config or --tool must be specified")
+	// Check if there's a default tool configured in the config file
+	configDir := getConfigDir()
+	configPath := filepath.Join(configDir, "config.json")
+	
+	if _, err := os.Stat(configPath); err == nil {
+		data, err := os.ReadFile(configPath)
+		if err == nil {
+			var config CLIConfig
+			if err := json.Unmarshal(data, &config); err == nil && config.Tool != "" {
+				// Create directory if it doesn't exist
+				dir := filepath.Dir(config.Tool)
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return "", err
+				}
+				return config.Tool, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("either --config or --tool must be specified, or set a default tool with 'mcp config set tool <path>'")
 }
 
 // MCPConfig represents the MCP JSON configuration format
