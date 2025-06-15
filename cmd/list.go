@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -104,9 +106,24 @@ func printServerRow(w *tabwriter.Writer, name string, service Service) {
 	if longFormat {
 		var commandStr string
 		
+		// Get the container tool from config, default to "docker"
+		containerTool := "docker"
+		configDir := getConfigDir()
+		configPath := filepath.Join(configDir, "config.json")
+		
+		if _, err := os.Stat(configPath); err == nil {
+			data, err := os.ReadFile(configPath)
+			if err == nil {
+				var config CLIConfig
+				if err := json.Unmarshal(data, &config); err == nil && config.ContainerTool != "" {
+					containerTool = config.ContainerTool
+				}
+			}
+		}
+		
 		if service.Image != "" {
-			// For image-based servers, show the docker run command format
-			commandStr = fmt.Sprintf("docker run -i --rm")
+			// For image-based servers, show the container run command format
+			commandStr = fmt.Sprintf("%s run -i --rm", containerTool)
 			
 			// Add environment variables to the command
 			for key := range service.Environment {

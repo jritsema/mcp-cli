@@ -231,4 +231,4 @@ The output MCP JSON file would look like this.
 
 # Guidelines
 
-Before making any code changes, first checkout a new git branch.  After updating code, run `make build` to ensure that the code compiles. Then, after testing, git commit your changes with a concise short message on one line along with a longer summary message.
+Before making any code changes, first checkout a new git branch.  After updating code, run `make build` to ensure that the code compiles. Run `go fmt` to ensure your code is correctly formatted. Then, after testing your changes, git commit your changes with a concise short message on one line along with a longer summary message.
