@@ -11,7 +11,8 @@ import (
 
 // CLIConfig represents the structure of the MCP CLI config file
 type CLIConfig struct {
-	Tool string `json:"tool,omitempty"`
+	Tool          string `json:"tool,omitempty"`
+	ContainerTool string `json:"container-tool,omitempty"`
 }
 
 var configCmd = &cobra.Command{
@@ -29,7 +30,7 @@ var configSetCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		if key != "tool" {
+		if key != "tool" && key != "container-tool" {
 			fmt.Fprintf(os.Stderr, "Error: unsupported configuration key: %s\n", key)
 			os.Exit(1)
 		}
@@ -71,6 +72,8 @@ var configSetCmd = &cobra.Command{
 		switch key {
 		case "tool":
 			config.Tool = value
+		case "container-tool":
+			config.ContainerTool = value
 		}
 
 		// Write the updated config

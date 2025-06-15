@@ -152,12 +152,27 @@ type MCPServer struct {
 func convertToMCPConfig(servers map[string]Service, envVars map[string]string) MCPConfig {
 	mcpServers := make(map[string]MCPServer)
 
+	// Get the container tool from config, default to "docker"
+	containerTool := "docker"
+	configDir := getConfigDir()
+	configPath := filepath.Join(configDir, "config.json")
+	
+	if _, err := os.Stat(configPath); err == nil {
+		data, err := os.ReadFile(configPath)
+		if err == nil {
+			var config CLIConfig
+			if err := json.Unmarshal(data, &config); err == nil && config.ContainerTool != "" {
+				containerTool = config.ContainerTool
+			}
+		}
+	}
+
 	for name, service := range servers {
 		var mcpServer MCPServer
 
 		if service.Image != "" {
-			// Docker container
-			mcpServer.Command = "docker"
+			// Container-based server
+			mcpServer.Command = containerTool
 			args := []string{"run", "-i", "--rm"}
 
 			// Add environment variables with expanded values

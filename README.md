@@ -92,9 +92,9 @@ MCP CLI supports these predefined tool shortcuts for popular AI tools:
 - `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
 - `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
 
-### Setting Default Tool
+### Setting Default AI Tool
 
-Configure a default tool to avoid specifying `-t` each time:
+Configure a default AI tool to avoid specifying `-t` each time:
 
 ```sh
 # Set Amazon Q CLI as your default tool
@@ -105,6 +105,15 @@ mcp set programming
 
 # or to switch back to defaults
 mcp set
+```
+
+### Setting Container Tool
+
+If you're using containers to run your MCP servers (by setting the `image` property), then MCP CLI will output `docker` run commands by default. If you're using a different container tool such as `finch` or `podman`, etc., then you can use the `set container-tool` command.
+
+```sh
+# Set a custom container tool (default is docker)
+mcp config set container-tool finch
 ```
 
 ### Profiles
