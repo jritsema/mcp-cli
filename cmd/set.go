@@ -118,7 +118,7 @@ func getOutputPath(envVars map[string]string) (string, error) {
 	// Check if there's a default tool configured in the config file
 	configDir := getConfigDir()
 	configPath := filepath.Join(configDir, "config.json")
-	
+
 	if _, err := os.Stat(configPath); err == nil {
 		data, err := os.ReadFile(configPath)
 		if err == nil {
@@ -156,7 +156,7 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 	containerTool := "docker"
 	configDir := getConfigDir()
 	configPath := filepath.Join(configDir, "config.json")
-	
+
 	if _, err := os.Stat(configPath); err == nil {
 		data, err := os.ReadFile(configPath)
 		if err == nil {
