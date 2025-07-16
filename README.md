@@ -20,9 +20,12 @@ MCP CLI simplifies managing MCP server configurations through a YAML-based appro
 
 ### Getting Started
 
-1. Create an [mcp-compose.yml](./mcp-compose.yml) file in `$HOME/.config/mcp/mcp-compose.yml` with your MCP server configurations. See example below, or copy the included example file.
+1. Create an [mcp-compose.yml](./mcp-compose.yml) file with your MCP server configurations. You can place this file in either:
+   - Your current working directory (for project-specific configurations)
+   - `$HOME/.config/mcp/mcp-compose.yml` (for global configurations)
 
 ```sh
+# For global configuration
 mkdir -p ~/.config/mcp
 cp ./mcp-compose.yml $HOME/.config/mcp/
 ```
@@ -31,6 +34,24 @@ cp ./mcp-compose.yml $HOME/.config/mcp/
 
 ```sh
 mcp set -t q-cli # or -t cursor, -t claude-desktop
+```
+
+### Configuration File Resolution
+
+MCP CLI automatically looks for configuration files in the following order:
+
+1. **Local directory**: `./mcp-compose.yml` in your current working directory
+2. **Global directory**: `$HOME/.config/mcp/mcp-compose.yml` in your home config directory
+3. **Custom path**: Use the `-f` flag to specify a custom location
+
+This allows you to have project-specific MCP server configurations that override your global settings when working in specific directories.
+
+```sh
+# Uses local mcp-compose.yml if it exists, otherwise falls back to global
+mcp ls
+
+# Explicitly use a custom configuration file
+mcp ls -f ./custom-mcp-compose.yml
 ```
 
 ### Listing MCP Servers

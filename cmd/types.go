@@ -75,13 +75,13 @@ func loadEnvVars(composePath string) (map[string]string, error) {
 		if len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
-			
+
 			// Remove quotes if present
 			if (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
 				(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
 				value = value[1 : len(value)-1]
 			}
-			
+
 			// Only set if not already in environment
 			if _, exists := envVars[key]; !exists {
 				envVars[key] = value
@@ -126,7 +126,7 @@ func filterServers(config *ComposeConfig, profile string, all bool) map[string]S
 		// Check if this is a default server (no profile or has "default" in profile)
 		isDefault := false
 		profileStr, hasProfile := service.Labels["mcp.profile"]
-		
+
 		if !hasProfile {
 			// No profile specified, consider it default
 			isDefault = true

@@ -26,13 +26,24 @@ func Execute() error {
 }
 
 func init() {
+	defaultComposeFile := getDefaultComposeFile()
+	rootCmd.PersistentFlags().StringVarP(&composeFile, "file", "f", defaultComposeFile, "Path to the mcp-compose.yml file")
+}
+
+// getDefaultComposeFile returns the default compose file path, checking local directory first
+func getDefaultComposeFile() string {
+	// First check for local mcp-compose.yml in current directory
+	localComposeFile := "mcp-compose.yml"
+	if _, err := os.Stat(localComposeFile); err == nil {
+		return localComposeFile
+	}
+
+	// Fall back to the global config directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting user home directory: %v\n", err)
 		os.Exit(1)
 	}
 
-	defaultComposeFile := filepath.Join(homeDir, ".config", "mcp", "mcp-compose.yml")
-
-	rootCmd.PersistentFlags().StringVarP(&composeFile, "file", "f", defaultComposeFile, "Path to the mcp-compose.yml file")
+	return filepath.Join(homeDir, ".config", "mcp", "mcp-compose.yml")
 }
