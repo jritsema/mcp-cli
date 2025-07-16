@@ -44,5 +44,5 @@ var clearCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(clearCmd)
 	clearCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to write the MCP JSON configuration file")
-	clearCmd.Flags().StringVarP(&toolShortcut, "tool", "t", "", "Tool shortcut (q-cli, claude-desktop, cursor)")
+	clearCmd.Flags().StringVarP(&toolShortcut, "tool", "t", "", "Tool shortcut (q-cli, claude-desktop, cursor, kiro)")
 }

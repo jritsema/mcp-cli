@@ -4,7 +4,7 @@ MCP CLI is a tool for managing MCP server configuration files.
 
 ## Why?
 
-Model Context Protocol (MCP) is a new technology and still evolving.  As I've been using it, I have encountered several pain points:
+Model Context Protocol (MCP) is a new technology and still evolving. As I've been using it, I have encountered several pain points:
 
 - Manually editing JSON files
 - Managing similar config files for different AI tools
@@ -12,7 +12,7 @@ Model Context Protocol (MCP) is a new technology and still evolving.  As I've be
 - Experimenting with new MCP servers
 - Switching between different configurations based on what I'm doing (e.g., programming, writing, researching)
 
-I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it.  This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
+I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it. This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
 
 ## Usage
 
@@ -20,7 +20,7 @@ MCP CLI simplifies managing MCP server configurations through a YAML-based appro
 
 ### Getting Started
 
-1. Create an [mcp-compose.yml](./mcp-compose.yml) file in `$HOME/.config/mcp/mcp-compose.yml` with your MCP server configurations.  See example below, or copy the included example file.
+1. Create an [mcp-compose.yml](./mcp-compose.yml) file in `$HOME/.config/mcp/mcp-compose.yml` with your MCP server configurations. See example below, or copy the included example file.
 
 ```sh
 mkdir -p ~/.config/mcp
@@ -32,7 +32,6 @@ cp ./mcp-compose.yml $HOME/.config/mcp/
 ```sh
 mcp set -t q-cli # or -t cursor, -t claude-desktop
 ```
-
 
 ### Listing MCP Servers
 
@@ -68,6 +67,9 @@ mcp set programming -t cursor
 # Set a specific server for Claude Desktop
 mcp set -t claude-desktop -s github
 
+# Set programming profile servers for Kiro IDE
+mcp set programming -t kiro
+
 # Use a custom output location
 mcp set -c /path/to/output/mcp.json
 ```
@@ -91,6 +93,7 @@ MCP CLI supports these predefined tool shortcuts for popular AI tools:
 - `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
 - `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
 - `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
+- `kiro` - Kiro IDE (`$HOME/.kiro/settings/mcp.json`)
 
 ### Setting Default AI Tool
 
@@ -122,7 +125,6 @@ Organize your MCP servers with profiles using the `labels` field in your `mcp-co
 
 ```yaml
 services:
-
   brave:
     image: mcp/brave-search
     environment:
@@ -144,7 +146,6 @@ mcp set programming -t claude-desktop
 
 Services without the label are considered defaults.
 
-
 ## How?
 
 It turns out that the Docker Compose (`docker-compose.yml`) specification already has good support for MCP stdio configuration where services map to MCP servers with `command`s, `image`s, `environment`s/`env_files`s, and `label`s for profiles. Another added benefit of this is you can run `docker compose pull -f mcp-compose.yml` and it will pre-fetch all the container images.
@@ -154,7 +155,6 @@ Example:
 ```yaml
 # MCP Servers
 services:
-
   time:
     command: uvx mcp-server-time
 
@@ -179,7 +179,6 @@ services:
     command: npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb
     labels:
       mcp.profile: database
-
 
   # OR container based MCP servers
 
