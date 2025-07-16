@@ -21,6 +21,7 @@ var toolShortcuts = map[string]string{
 	"q-cli":          filepath.Join("${HOME}", ".aws", "amazonq", "mcp.json"),
 	"claude-desktop": filepath.Join("${HOME}", "Library", "Application Support", "Claude", "claude_desktop_config.json"),
 	"cursor":         filepath.Join("${HOME}", ".cursor", "mcp.json"),
+	"kiro":           filepath.Join("${HOME}", ".kiro", "settings", "mcp.json"),
 }
 
 // setCmd represents the set command
@@ -84,7 +85,7 @@ If no profile is specified, it uses default servers.`,
 func init() {
 	rootCmd.AddCommand(setCmd)
 	setCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to write the MCP JSON configuration file")
-	setCmd.Flags().StringVarP(&toolShortcut, "tool", "t", "", "Tool shortcut (q-cli, claude-desktop, cursor)")
+	setCmd.Flags().StringVarP(&toolShortcut, "tool", "t", "", "Tool shortcut (q-cli, claude-desktop, cursor, kiro)")
 	setCmd.Flags().StringVarP(&singleServer, "server", "s", "", "Specify a single server to include")
 }
 
