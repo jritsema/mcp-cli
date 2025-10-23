@@ -9,12 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// CLIConfig represents the structure of the MCP CLI config file
-type CLIConfig struct {
-	Tool          string `json:"tool,omitempty"`
-	ContainerTool string `json:"container-tool,omitempty"`
-}
-
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage MCP CLI configuration",
