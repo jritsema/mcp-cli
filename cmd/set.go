@@ -69,6 +69,22 @@ If no profile is specified, it uses default servers.`,
 			}
 		}
 
+		// Validate remote servers have required OAuth labels
+		for name, service := range servers {
+			if IsRemoteServer(service) {
+				if err := ValidateRemoteServerOAuth(name, service); err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
+			}
+		}
+
+		// Validate tool compatibility with remote servers
+		if err := ValidateToolSupport(toolShortcut, servers); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 		// Convert to MCP JSON format
 		mcpConfig := convertToMCPConfig(servers, envVars)
 
@@ -138,18 +154,6 @@ func getOutputPath(envVars map[string]string) (string, error) {
 	return "", fmt.Errorf("either --config or --tool must be specified, or set a default tool with 'mcp config set tool <path>'")
 }
 
-// MCPConfig represents the MCP JSON configuration format
-type MCPConfig struct {
-	MCPServers map[string]MCPServer `json:"mcpServers"`
-}
-
-// MCPServer represents a single MCP server in the JSON configuration
-type MCPServer struct {
-	Command string            `json:"command"`
-	Args    []string          `json:"args,omitempty"`
-	Env     map[string]string `json:"env,omitempty"`
-}
-
 func convertToMCPConfig(servers map[string]Service, envVars map[string]string) MCPConfig {
 	mcpServers := make(map[string]MCPServer)
 
@@ -171,7 +175,29 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 	for name, service := range servers {
 		var mcpServer MCPServer
 
-		if service.Image != "" {
+		if IsRemoteServer(service) {
+			// Remote server - use HTTP-based configuration
+			mcpServer.Type = "http"
+			mcpServer.URL = service.Command
+
+			// Acquire OAuth access token for remote servers
+			oauthConfig, err := ExtractOAuthConfig(service, envVars)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error extracting OAuth config for '%s': %v\n", name, err)
+				os.Exit(1)
+			}
+
+			accessToken, err := AcquireAccessTokenWithFeedback(name, oauthConfig)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to acquire access token for '%s': %v\n", name, err)
+				os.Exit(1)
+			}
+
+			// Set Authorization header with Bearer token
+			mcpServer.Headers = map[string]string{
+				"Authorization": fmt.Sprintf("Bearer %s", accessToken),
+			}
+		} else if service.Image != "" {
 			// Container-based server
 			mcpServer.Command = containerTool
 			args := []string{"run", "-i", "--rm"}
@@ -202,8 +228,8 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 			}
 		}
 
-		// Add environment variables with expanded values
-		if len(service.Environment) > 0 {
+		// Add environment variables with expanded values (only for local servers)
+		if !IsRemoteServer(service) && len(service.Environment) > 0 {
 			expandedEnv := make(map[string]string)
 			for key, value := range service.Environment {
 				// Expand environment variables in the output JSON

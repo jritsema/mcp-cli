@@ -167,6 +167,62 @@ mcp set programming -t claude-desktop
 
 Services without the label are considered defaults.
 
+### Remote MCP Servers
+
+MCP CLI supports remote MCP servers that use `Streamable HTTP` transport with OAuth 2.0 authentication. Remote servers are identified by URLs starting with `https://` in the command field.
+
+#### Configuration
+
+To configure a remote MCP server, use the following format in your `mcp-compose.yml`:
+
+```yaml
+services:
+  my-remote-server:
+    command: https://my-remote-server.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp
+    labels:
+      mcp.grant-type: client_credentials
+      mcp.token-endpoint: https://my-app.auth.us-east-1.amazoncognito.com/oauth2/token
+      mcp.client-id: ${REMOTE_CLIENT_ID}
+      mcp.client-secret: ${REMOTE_CLIENT_SECRET}
+```
+
+#### Required Labels for Remote Servers
+
+- `mcp.grant-type`: Must be "client_credentials"
+- `mcp.token-endpoint`: OAuth 2.0 token endpoint URL
+- `mcp.client-id`: OAuth client identifier (supports environment variable expansion)
+- `mcp.client-secret`: OAuth client secret (supports environment variable expansion)
+
+#### Environment Variables
+
+Set your OAuth credentials in your environment or `.env` file:
+
+```bash
+REMOTE_CLIENT_ID=your_client_id_here
+REMOTE_CLIENT_SECRET=your_client_secret_here
+```
+
+#### Tool Support
+
+Remote MCP servers are currently supported by:
+
+- `kiro` - Kiro IDE
+- `q-cli` - Amazon Q CLI
+
+
+#### Authentication Flow
+
+When deploying remote servers, MCP CLI will:
+
+1. Validate the OAuth configuration
+2. Acquire an access token using the client credentials flow
+3. Generate MCP configuration with HTTP transport and authorization headers
+
+```sh
+# Deploy remote servers (will show "acquiring access token..." message)
+mcp set
+```
+
 ## How?
 
 It turns out that the Docker Compose (`docker-compose.yml`) specification already has good support for MCP stdio configuration where services map to MCP servers with `command`s, `image`s, `environment`s/`env_files`s, and `label`s for profiles. Another added benefit of this is you can run `docker compose pull -f mcp-compose.yml` and it will pre-fetch all the container images.
