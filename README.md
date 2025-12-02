@@ -14,6 +14,38 @@ Model Context Protocol (MCP) is a new technology and still evolving. As I've bee
 
 I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it. This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
 
+## Installation
+
+### macOS and Linux
+
+Download the appropriate binary for your platform from the [releases page](https://github.com/
+jritsema/mcp-cli/releases):
+
+- macOS AMD64: `mcp-darwin-amd64`
+- macOS ARM64: `mcp-darwin-arm64`
+- Linux AMD64: `mcp-linux-amd64`
+
+Make the binary executable and move it to your PATH:
+
+```sh
+chmod +x mcp-darwin-arm64
+sudo mv mcp-darwin-arm64 /usr/local/bin/mcp
+```
+
+### Windows
+
+Download the appropriate Windows binary for your architecture from the [releases page](https://github.com/
+jritsema/mcp-cli/releases):
+
+- **Windows AMD64** (most common): `mcp-windows-amd64.zip`
+- **Windows ARM64** (Surface devices, ARM VMs): `mcp-windows-arm64.zip`
+
+#### Installation Steps
+
+1. Download the appropriate `.zip` file for your architecture
+2. Extract the `.exe` file from the archive
+3. Move `mcp.exe` to a directory in your PATH, or add the directory to your PATH
+
 ## Usage
 
 MCP CLI simplifies managing MCP server configurations through a YAML-based approach.
@@ -111,10 +143,18 @@ mcp clear -c /path/to/output/mcp.json
 
 MCP CLI supports these predefined tool shortcuts for popular AI tools:
 
-- `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
-- `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
-- `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
-- `kiro` - Kiro IDE (`$HOME/.kiro/settings/mcp.json`)
+- `q-cli` - Amazon Q CLI
+  - macOS/Linux: `$HOME/.aws/amazonq/mcp.json`
+  - Windows: `%USERPROFILE%\.aws\amazonq\mcp.json`
+- `claude-desktop` - Claude Desktop
+  - macOS: `$HOME/Library/Application Support/Claude/claude_desktop_config.json`
+  - Windows: `%USERPROFILE%\AppData\Roaming\Claude\claude_desktop_config.json`
+- `cursor` - Cursor IDE
+  - macOS/Linux: `$HOME/.cursor/mcp.json`
+  - Windows: `%USERPROFILE%\.cursor\mcp.json`
+- `kiro` - Kiro IDE
+  - macOS/Linux: `$HOME/.kiro/settings/mcp.json`
+  - Windows: `%USERPROFILE%\.kiro\settings\mcp.json`
 
 ### Setting Default AI Tool
 
@@ -272,6 +312,186 @@ services:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
       mcp.profile: programming, research
+```
+
+## Windows Troubleshooting
+
+### Path Issues
+
+**Problem: Configuration files not found**
+
+MCP CLI uses Unix-style paths internally but works with Windows paths. If you're having issues:
+
+```powershell
+# Verify your home directory
+echo $env:USERPROFILE
+
+# Check if config directory exists
+Test-Path "$env:USERPROFILE\.config\mcp"
+
+# Create it if needed
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\mcp" -Force
+```
+
+**Problem: UNC paths not working**
+
+UNC paths (e.g., `\\server\share\path`) are supported but may require proper network permissions:
+
+```powershell
+# Test UNC path access
+Test-Path "\\server\share\mcp-compose.yml"
+
+# Use mapped drive as alternative
+net use Z: \\server\share
+mcp ls -f Z:\mcp-compose.yml
+```
+
+**Problem: Drive letter issues**
+
+Always use absolute paths with drive letters on Windows:
+
+```powershell
+# Good
+mcp ls -f C:\projects\mcp-compose.yml
+
+# Also works with forward slashes
+mcp ls -f C:/projects/mcp-compose.yml
+```
+
+### Environment Variables
+
+**Unix-style syntax on Windows**
+
+MCP CLI uses Unix-style environment variable syntax (`$VAR` or `${VAR}`) on all platforms, including Windows:
+
+```yaml
+# In mcp-compose.yml - use Unix-style syntax even on Windows
+services:
+  github:
+    command: npx -y @modelcontextprotocol/server-github
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}  # Correct
+      # NOT: %GITHUB_TOKEN%          # Wrong - don't use Windows syntax
+```
+
+**Setting environment variables**
+
+Create a `.env` file in `%USERPROFILE%\.config\mcp\`:
+
+```bash
+# .env file (use Unix-style syntax)
+GITHUB_TOKEN=ghp_your_token_here
+BRAVE_API_KEY=your_api_key_here
+```
+
+Or set them in PowerShell:
+
+```powershell
+# Temporary (current session only)
+$env:GITHUB_TOKEN = "ghp_your_token_here"
+
+# Permanent (user-level)
+[Environment]::SetEnvironmentVariable("GITHUB_TOKEN", "ghp_your_token_here", "User")
+```
+
+### Path Separators
+
+MCP CLI automatically handles path separators. You can use either forward slashes or backslashes:
+
+```powershell
+# Both work on Windows
+mcp ls -f C:\projects\mcp-compose.yml
+mcp ls -f C:/projects/mcp-compose.yml
+```
+
+### Common Configuration Examples
+
+**Example 1: Basic Windows setup**
+
+```powershell
+# Create config directory
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\mcp" -Force
+
+# Create mcp-compose.yml
+@"
+services:
+  time:
+    command: uvx mcp-server-time
+  
+  fetch:
+    command: uvx mcp-server-fetch
+"@ | Out-File -FilePath "$env:USERPROFILE\.config\mcp\mcp-compose.yml" -Encoding UTF8
+```
+
+**Example 2: With environment variables**
+
+```powershell
+# Create .env file
+@"
+GITHUB_TOKEN=ghp_your_token_here
+BRAVE_API_KEY=your_api_key_here
+"@ | Out-File -FilePath "$env:USERPROFILE\.config\mcp\.env" -Encoding UTF8
+
+# Create mcp-compose.yml with env vars
+@"
+services:
+  github:
+    command: npx -y @modelcontextprotocol/server-github
+    environment:
+      GITHUB_PERSONAL_ACCESS_TOKEN: `${GITHUB_TOKEN}
+    labels:
+      mcp.profile: programming
+  
+  brave:
+    image: mcp/brave-search
+    environment:
+      BRAVE_API_KEY: `${BRAVE_API_KEY}
+    labels:
+      mcp.profile: research
+"@ | Out-File -FilePath "$env:USERPROFILE\.config\mcp\mcp-compose.yml" -Encoding UTF8
+```
+
+**Example 3: Project-specific configuration**
+
+```powershell
+# In your project directory
+cd C:\projects\myproject
+
+# Create local mcp-compose.yml (overrides global config)
+@"
+services:
+  postgres:
+    command: npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb
+    labels:
+      mcp.profile: database
+"@ | Out-File -FilePath ".\mcp-compose.yml" -Encoding UTF8
+
+# Use it
+mcp ls
+```
+
+### Tool-Specific Issues
+
+**Claude Desktop not found**
+
+Verify Claude Desktop is installed and the config directory exists:
+
+```powershell
+Test-Path "$env:USERPROFILE\AppData\Roaming\Claude"
+
+# Create directory if needed
+New-Item -ItemType Directory -Path "$env:USERPROFILE\AppData\Roaming\Claude" -Force
+```
+
+**Amazon Q CLI not found**
+
+Verify AWS directory structure:
+
+```powershell
+Test-Path "$env:USERPROFILE\.aws\amazonq"
+
+# Create directory if needed
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.aws\amazonq" -Force
 ```
 
 ## Development
