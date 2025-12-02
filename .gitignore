@@ -6,3 +6,4 @@ app
 mcp
 .env
 mcp.json
+*.exe

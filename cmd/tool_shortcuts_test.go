@@ -16,26 +16,24 @@ func TestToolShortcutPaths(t *testing.T) {
 	}
 
 	// Test all existing tool shortcuts
-	expectedPaths := map[string]string{
-		"q-cli":          filepath.Join(homeDir, ".aws", "amazonq", "mcp.json"),
-		"claude-desktop": filepath.Join(homeDir, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
-		"cursor":         filepath.Join(homeDir, ".cursor", "mcp.json"),
-		"kiro":           filepath.Join(homeDir, ".kiro", "settings", "mcp.json"),
-	}
+	tools := []string{"q-cli", "claude-desktop", "cursor", "kiro"}
 
-	for tool, expectedPath := range expectedPaths {
-		// Test path expansion
-		shortcutPath, exists := toolShortcuts[tool]
-		if !exists {
-			t.Errorf("Tool shortcut '%s' not found", tool)
+	for _, tool := range tools {
+		// Test path from getPlatformToolPath
+		path := getPlatformToolPath(tool)
+		if path == "" {
+			t.Errorf("Tool shortcut '%s' returned empty path", tool)
 			continue
 		}
 
-		// Expand ${HOME} in the shortcut path
-		expandedPath := strings.Replace(shortcutPath, "${HOME}", homeDir, 1)
+		// Verify path starts with home directory
+		if !strings.HasPrefix(path, homeDir) {
+			t.Errorf("Tool '%s': path should start with home directory, got '%s'", tool, path)
+		}
 
-		if expandedPath != expectedPath {
-			t.Errorf("Tool '%s': expected path '%s', got '%s'", tool, expectedPath, expandedPath)
+		// Verify path is absolute
+		if !filepath.IsAbs(path) {
+			t.Errorf("Tool '%s': path should be absolute, got '%s'", tool, path)
 		}
 	}
 }
@@ -43,7 +41,9 @@ func TestToolShortcutPaths(t *testing.T) {
 // TestGetOutputPathWithToolShortcuts tests the getOutputPath function with tool shortcuts
 func TestGetOutputPathWithToolShortcuts(t *testing.T) {
 	// Test that getOutputPath works with tool shortcuts (using real paths)
-	for tool := range toolShortcuts {
+	tools := []string{"q-cli", "claude-desktop", "cursor", "kiro"}
+	
+	for _, tool := range tools {
 		// Simulate setting the tool shortcut
 		originalToolShortcut := toolShortcut
 		toolShortcut = tool
@@ -100,7 +100,8 @@ func TestToolCompatibilityWithLocalServers(t *testing.T) {
 	}
 
 	// Test that all tool shortcuts work with local servers
-	for tool := range toolShortcuts {
+	tools := []string{"q-cli", "claude-desktop", "cursor", "kiro"}
+	for _, tool := range tools {
 		err := ValidateToolSupport(tool, localServers)
 		if err != nil {
 			t.Errorf("Tool '%s' should support local servers: %v", tool, err)

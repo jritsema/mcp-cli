@@ -48,6 +48,16 @@ jobs:
           chmod +x mcp-linux-amd64
           zip -j mcp-linux-amd64.zip mcp-linux-amd64
 
+      - name: Build for Windows (AMD64)
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o mcp-windows-amd64.exe -ldflags="-X 'main.Version=${{ env.VERSION }}'" .
+          zip -j mcp-windows-amd64.zip mcp-windows-amd64.exe
+
+      - name: Build for Windows (ARM64)
+        run: |
+          GOOS=windows GOARCH=arm64 go build -o mcp-windows-arm64.exe -ldflags="-X 'main.Version=${{ env.VERSION }}'" .
+          zip -j mcp-windows-arm64.zip mcp-windows-arm64.exe
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -60,6 +70,8 @@ jobs:
             mcp-darwin-amd64.zip
             mcp-darwin-arm64.zip
             mcp-linux-amd64.zip
+            mcp-windows-amd64.zip
+            mcp-windows-arm64.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

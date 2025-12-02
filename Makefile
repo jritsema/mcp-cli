@@ -25,6 +25,20 @@ test:
 build: test
 	go build -o ./app -v
 
+## build-windows-amd64: build Windows AMD64 binary
+.PHONY: build-windows-amd64
+build-windows-amd64: test
+	GOOS=windows GOARCH=amd64 go build -o ./mcp.exe -v
+
+## build-windows-arm64: build Windows ARM64 binary
+.PHONY: build-windows-arm64
+build-windows-arm64: test
+	GOOS=windows GOARCH=arm64 go build -o ./mcp-arm64.exe -v
+
+## build-all: build binaries for all platforms
+.PHONY: build-all
+build-all: build build-windows-amd64 build-windows-arm64
+
 ## autobuild: auto build when source files change
 .PHONY: autobuild
 autobuild:
