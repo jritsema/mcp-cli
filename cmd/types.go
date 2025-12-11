@@ -131,3 +131,28 @@ type OAuthResponse struct {
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
 }
+
+// ServerStatus represents the status of a server in a specific tool
+type ServerStatus struct {
+	Status      string   // "configured", "not-configured", "different", "unknown"
+	Tool        string   // tool shortcut name
+	Differences []string // list of differences if status is "different"
+	ConfigPath  string   // path to the config file
+	Error       string   // error message if status is "unknown"
+}
+
+// ToolStatus represents the status of a tool configuration
+type ToolStatus struct {
+	ToolName    string
+	ConfigPath  string
+	Exists      bool
+	ServerCount int
+}
+
+// ToolConfig represents a tool's configuration with metadata
+type ToolConfig struct {
+	Config  MCPConfig
+	Path    string
+	Exists  bool
+	Error   string
+}
