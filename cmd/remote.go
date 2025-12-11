@@ -11,45 +11,116 @@ import (
 	"time"
 )
 
-// IsRemoteServer detects if a service is a remote MCP server by checking if the command starts with https://
+// IsRemoteServer detects if a service is a remote MCP server by checking if the command starts with https:// or http://
 func IsRemoteServer(service Service) bool {
-	return strings.HasPrefix(service.Command, "https://")
+	return strings.HasPrefix(service.Command, "https://") || strings.HasPrefix(service.Command, "http://")
 }
 
-// ValidateRemoteServerOAuth validates that a remote server has all required OAuth labels
-func ValidateRemoteServerOAuth(name string, service Service) error {
-	requiredLabels := []string{
-		"mcp.grant-type",
-		"mcp.token-endpoint",
-		"mcp.client-id",
-		"mcp.client-secret",
-	}
-
-	var missingLabels []string
-	for _, label := range requiredLabels {
-		if _, exists := service.Labels[label]; !exists {
-			missingLabels = append(missingLabels, label)
+// UsesHeadersAuth checks if a remote server uses headers-based authentication instead of OAuth
+func UsesHeadersAuth(service Service) bool {
+	// Check if any mcp.header.* labels exist
+	for label := range service.Labels {
+		if strings.HasPrefix(label, "mcp.header.") {
+			return true
 		}
 	}
+	return false
+}
 
-	if len(missingLabels) > 0 {
-		return fmt.Errorf("remote server '%s' missing required OAuth labels: %s",
-			name, strings.Join(missingLabels, ", "))
+// ValidateRemoteServerAuth validates that a remote server has either OAuth or headers-based auth configured
+func ValidateRemoteServerAuth(name string, service Service) error {
+	usesHeaders := UsesHeadersAuth(service)
+	hasOAuthLabels := service.Labels["mcp.grant-type"] != ""
+
+	if !usesHeaders && !hasOAuthLabels {
+		return fmt.Errorf("remote server '%s' must have either OAuth labels (mcp.grant-type, mcp.token-endpoint, mcp.client-id, mcp.client-secret) or headers labels (mcp.header.*)", name)
 	}
 
-	// Validate grant type is client_credentials
-	if grantType := service.Labels["mcp.grant-type"]; grantType != "client_credentials" {
-		return fmt.Errorf("remote server '%s' must use 'client_credentials' grant type, got: %s",
-			name, grantType)
+	if usesHeaders && hasOAuthLabels {
+		return fmt.Errorf("remote server '%s' cannot have both OAuth labels and headers labels", name)
+	}
+
+	if hasOAuthLabels {
+		// Validate OAuth configuration
+		requiredLabels := []string{
+			"mcp.grant-type",
+			"mcp.token-endpoint",
+			"mcp.client-id",
+			"mcp.client-secret",
+		}
+
+		var missingLabels []string
+		for _, label := range requiredLabels {
+			if _, exists := service.Labels[label]; !exists {
+				missingLabels = append(missingLabels, label)
+			}
+		}
+
+		if len(missingLabels) > 0 {
+			return fmt.Errorf("remote server '%s' missing required OAuth labels: %s",
+				name, strings.Join(missingLabels, ", "))
+		}
+
+		// Validate grant type is client_credentials
+		if grantType := service.Labels["mcp.grant-type"]; grantType != "client_credentials" {
+			return fmt.Errorf("remote server '%s' must use 'client_credentials' grant type, got: %s",
+				name, grantType)
+		}
 	}
 
 	return nil
 }
 
+// ValidateRemoteServerOAuth validates that a remote server has all required OAuth labels (deprecated, use ValidateRemoteServerAuth)
+func ValidateRemoteServerOAuth(name string, service Service) error {
+	return ValidateRemoteServerAuth(name, service)
+}
+
+// ExtractHeaders extracts headers from service labels (mcp.header.*) with environment variable expansion
+func ExtractHeaders(service Service, envVars map[string]string) (map[string]string, error) {
+	headers := make(map[string]string)
+	hasHeaders := false
+
+	for label, value := range service.Labels {
+		if strings.HasPrefix(label, "mcp.header.") {
+			hasHeaders = true
+			// Extract header name (everything after "mcp.header.")
+			headerName := strings.TrimPrefix(label, "mcp.header.")
+			if headerName == "" {
+				continue
+			}
+
+			// Skip empty placeholder headers (e.g., "X-Empty: "" for servers that need no auth)
+			if headerName == "X-Empty" && value == "" {
+				continue
+			}
+
+			// Expand environment variables in header value
+			expandedValue := expandEnvVars(value, envVars)
+
+			// Validate that environment variables were resolved
+			if strings.Contains(expandedValue, "${") || (strings.Contains(expandedValue, "$") && !strings.HasPrefix(expandedValue, "$")) {
+				return nil, fmt.Errorf("environment variable in header '%s' was not resolved: %s", headerName, expandedValue)
+			}
+
+			headers[headerName] = expandedValue
+		}
+	}
+
+	// Return headers map (can be empty for servers with no authentication)
+	// If no mcp.header.* labels exist at all, that's an error (use OAuth or headers)
+	if !hasHeaders {
+		return nil, fmt.Errorf("no headers found (expected mcp.header.* labels)")
+	}
+
+	return headers, nil
+}
+
 // remoteSupportedTools defines which tools support remote MCP servers
 var remoteSupportedTools = map[string]bool{
-	"kiro":  true,
-	"q-cli": true,
+	"cursor": true,
+	"kiro":   true,
+	"q-cli":  true,
 }
 
 // ValidateToolSupport validates that the specified tool supports remote servers if any are present
