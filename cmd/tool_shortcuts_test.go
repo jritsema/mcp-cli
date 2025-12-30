@@ -145,7 +145,7 @@ func TestToolCompatibilityWithRemoteServers(t *testing.T) {
 	}
 
 	// Test unsupported tools
-	unsupportedTools := []string{"cursor", "claude-desktop"}
+	unsupportedTools := []string{"claude-desktop"}
 	for _, tool := range unsupportedTools {
 		err := ValidateToolSupport(tool, mixedServers)
 		if err == nil {

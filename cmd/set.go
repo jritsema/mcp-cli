@@ -61,10 +61,10 @@ If no profile is specified, it uses default servers.`,
 			}
 		}
 
-		// Validate remote servers have required OAuth labels
+		// Validate remote servers have required auth configuration (OAuth or headers)
 		for name, service := range servers {
 			if IsRemoteServer(service) {
-				if err := ValidateRemoteServerOAuth(name, service); err != nil {
+				if err := ValidateRemoteServerAuth(name, service); err != nil {
 					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 					os.Exit(1)
 				}
@@ -165,22 +165,47 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 			mcpServer.Type = "http"
 			mcpServer.URL = service.Command
 
-			// Acquire OAuth access token for remote servers
-			oauthConfig, err := ExtractOAuthConfig(service, envVars)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error extracting OAuth config for '%s': %v\n", name, err)
-				os.Exit(1)
+			// Merge service environment variables into envVars for expansion
+			serviceEnvVars := make(map[string]string)
+			for k, v := range envVars {
+				serviceEnvVars[k] = v
+			}
+			// Add service-specific environment variables (with expansion)
+			for key, value := range service.Environment {
+				expandedValue := expandEnvVars(value, envVars)
+				serviceEnvVars[key] = expandedValue
 			}
 
-			accessToken, err := AcquireAccessTokenWithFeedback(name, oauthConfig)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to acquire access token for '%s': %v\n", name, err)
-				os.Exit(1)
-			}
+			if UsesHeadersAuth(service) {
+				// Headers-based authentication
+				headers, err := ExtractHeaders(service, serviceEnvVars)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error extracting headers for '%s': %v\n", name, err)
+					os.Exit(1)
+				}
+				// Always set headers, even if empty (for servers with no auth)
+				if headers == nil {
+					headers = make(map[string]string)
+				}
+				mcpServer.Headers = headers
+			} else {
+				// OAuth-based authentication
+				oauthConfig, err := ExtractOAuthConfig(service, serviceEnvVars)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error extracting OAuth config for '%s': %v\n", name, err)
+					os.Exit(1)
+				}
 
-			// Set Authorization header with Bearer token
-			mcpServer.Headers = map[string]string{
-				"Authorization": fmt.Sprintf("Bearer %s", accessToken),
+				accessToken, err := AcquireAccessTokenWithFeedback(name, oauthConfig)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to acquire access token for '%s': %v\n", name, err)
+					os.Exit(1)
+				}
+
+				// Set Authorization header with Bearer token
+				mcpServer.Headers = map[string]string{
+					"Authorization": fmt.Sprintf("Bearer %s", accessToken),
+				}
 			}
 		} else if service.Image != "" {
 			// Container-based server

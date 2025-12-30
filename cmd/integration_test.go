@@ -166,9 +166,9 @@ REMOTE_CLIENT_SECRET=test-client-secret
 		t.Errorf("q-cli should support mixed servers: %v", err)
 	}
 
-	// Should fail for unsupported tools
-	if err := ValidateToolSupport("cursor", mixedServers); err == nil {
-		t.Error("cursor should not support remote servers")
+	// Should pass for cursor (now supported)
+	if err := ValidateToolSupport("cursor", mixedServers); err != nil {
+		t.Errorf("cursor should support remote servers: %v", err)
 	}
 
 	// Should pass when no tool is specified
