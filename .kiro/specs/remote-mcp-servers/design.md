@@ -2,7 +2,10 @@
 
 ## Overview
 
-This design extends the existing MCP CLI tool to support remote MCP servers alongside the current local command-based and container-based servers. The solution will detect remote servers by checking if the command field starts with `https://`, handle OAuth 2.0 client credentials authentication, and generate appropriate MCP configuration files with HTTP transport and authorization headers.
+This design extends the existing MCP CLI tool to support remote MCP servers alongside the current local command-based and container-based servers. The solution will detect remote servers by checking if the command field starts with `https://` or `http://`, and supports two authentication methods:
+
+1. **Headers-based authentication** - For API keys and custom headers via `mcp.header.*` labels
+2. **OAuth 2.0 client credentials** - For OAuth-based authentication via `mcp.grant-type` and related labels
 
 The design maintains backward compatibility with existing functionality while adding new capabilities for remote server authentication and configuration generation.
 
@@ -38,13 +41,34 @@ The remote server functionality will be organized into separate files for better
 
 ### 1. Remote Server Detection
 
-**Location**: New `cmd/remote.go` file
+**Location**: `cmd/remote.go`
 
-The system will detect remote servers by examining the command field in service configurations. Remote servers are identified by URLs starting with `https://`.
+The system detects remote servers by examining the command field in service configurations. Remote servers are identified by URLs starting with `https://` or `http://`.
 
-### 2. OAuth 2.0 Client
+### 2. Authentication Method Detection
 
-**Location**: New `cmd/remote.go` file
+**Location**: `cmd/remote.go`
+
+The system determines which authentication method to use:
+
+- **Headers-based**: If any `mcp.header.*` labels exist
+- **OAuth-based**: If `mcp.grant-type` label exists
+
+Validation ensures servers use one method or the other, not both.
+
+### 3. Headers Extraction
+
+**Location**: `cmd/remote.go`
+
+For headers-based authentication:
+
+- Extract header names from `mcp.header.*` labels (e.g., `mcp.header.Authorization` → `Authorization`)
+- Expand environment variables in header values
+- Validate that all environment variables were resolved
+
+### 4. OAuth 2.0 Client
+
+**Location**: `cmd/remote.go`
 
 A complete OAuth 2.0 client credentials implementation will handle:
 
@@ -54,18 +78,19 @@ A complete OAuth 2.0 client credentials implementation will handle:
 - User feedback during authentication process
 - Response parsing and validation
 
-### 3. Remote Server Validation
+### 5. Remote Server Validation
 
-**Location**: New `cmd/remote.go` file
+**Location**: `cmd/remote.go`
 
-Validation components will ensure:
+Validation components ensure:
 
-- All required OAuth labels are present in remote server configurations
-- Grant type is set to `client_credentials`
-- Tool compatibility with remote servers (initially supporting kiro and q-cli)
+- Remote servers have either headers-based OR OAuth-based auth (not both, not neither)
+- All required OAuth labels are present when using OAuth
+- Grant type is set to `client_credentials` for OAuth
+- Tool compatibility with remote servers (cursor, kiro, and q-cli supported)
 - Clear error messages for missing or invalid configuration
 
-### 4. Enhanced MCP Configuration Generation
+### 6. Enhanced MCP Configuration Generation
 
 **Modified Component**: Existing configuration generation logic in `cmd/types.go`
 
@@ -77,17 +102,40 @@ The existing MCP configuration generation will be enhanced to support both local
 - Remote servers: Use type="http", url, and headers structure
 - Mixed configurations: Support both types in same output file
 
-### 5. Tool Compatibility Validation
+### 7. Tool Compatibility Validation
 
 **New Component**: Tool support validation for remote servers
 
-The system will validate tool compatibility by maintaining a list of supported tools for remote servers. Initially, only `kiro` and `q-cli` tools will support remote servers, with clear error messages for unsupported combinations. Backward compatibility will be maintained for local servers on all tools.
+The system validates tool compatibility by maintaining a list of supported tools for remote servers. Currently, `cursor`, `kiro`, and `q-cli` tools support remote servers, with clear error messages for unsupported combinations. Backward compatibility is maintained for local servers on all tools.
 
 ## Data Models
 
+### Headers-Based Authentication Labels
+
+Remote servers can use headers-based authentication via `mcp.header.*` labels:
+
+```yaml
+services:
+  context7:
+    command: https://mcp.context7.com/mcp
+    labels:
+      mcp.header.Authorization: Bearer ${CONTEXT7_API_KEY}
+
+  custom-server:
+    command: https://api.example.com/mcp
+    labels:
+      mcp.header.X-API-Key: ${API_KEY}
+      mcp.header.X-Custom-Header: some-value
+```
+
+**Header Label Format**:
+
+- Label name: `mcp.header.<HeaderName>` (e.g., `mcp.header.Authorization`)
+- Label value: Header value with optional environment variable expansion
+
 ### OAuth Configuration Labels
 
-Remote servers require specific labels in the YAML configuration:
+Remote servers can use OAuth 2.0 client credentials via OAuth labels:
 
 ```yaml
 services:
@@ -100,12 +148,19 @@ services:
       mcp.client-secret: ${REMOTE_CLIENT_SECRET}
 ```
 
-**Required Labels for Remote Servers**:
+**Required OAuth Labels**:
 
 - `mcp.grant-type`: Must be "client_credentials"
 - `mcp.token-endpoint`: OAuth 2.0 token endpoint URL
 - `mcp.client-id`: OAuth client identifier (supports env var expansion)
 - `mcp.client-secret`: OAuth client secret (supports env var expansion)
+
+### Authentication Method Selection
+
+- If any `mcp.header.*` labels exist → Headers-based authentication
+- If `mcp.grant-type` label exists → OAuth authentication
+- Both methods cannot be used on the same server
+- One method must be specified for remote servers
 
 ### Generated MCP Configuration
 
@@ -122,7 +177,23 @@ services:
 }
 ```
 
-**Remote Server Output** (new):
+**Remote Server Output** (headers-based):
+
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "Authorization": "Bearer actual-api-key-value"
+      }
+    }
+  }
+}
+```
+
+**Remote Server Output** (OAuth):
 
 ```json
 {
@@ -142,18 +213,28 @@ services:
 
 ### Validation Errors
 
-1. **Missing OAuth Labels**: When remote server lacks required OAuth configuration
+1. **Missing Authentication**: When remote server lacks both OAuth and headers configuration
+
+   - Error: "Remote server 'name' must have either OAuth labels (mcp.grant-type, mcp.token-endpoint, mcp.client-id, mcp.client-secret) or headers labels (mcp.header.\*)"
+   - Exit code: 1
+
+2. **Conflicting Authentication**: When remote server has both OAuth and headers configuration
+
+   - Error: "Remote server 'name' cannot have both OAuth labels and headers labels"
+   - Exit code: 1
+
+3. **Missing OAuth Labels**: When using OAuth but lacking required labels
 
    - Error: "Remote server 'name' missing required OAuth labels: mcp.grant-type, mcp.token-endpoint, mcp.client-id, mcp.client-secret"
    - Exit code: 1
 
-2. **Unsupported Tool**: When using remote servers with unsupported tools
+4. **Unsupported Tool**: When using remote servers with unsupported tools
 
-   - Error: "Tool 'cursor' does not support remote MCP servers. Supported tools: kiro, q-cli"
+   - Error: "Tool 'claude-desktop' does not support remote MCP servers. Supported tools: cursor, kiro, q-cli"
    - Exit code: 1
 
-3. **Invalid URL**: When remote server URL is malformed
-   - Error: "Invalid remote server URL: 'invalid-url'"
+5. **Unresolved Environment Variable**: When header value contains unresolved env var
+   - Error: "Environment variable in header 'Authorization' was not resolved: Bearer ${MISSING_VAR}"
    - Exit code: 1
 
 ### Runtime Errors
