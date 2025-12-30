@@ -16,14 +16,6 @@ var (
 	singleServer string
 )
 
-// Tool shortcuts mapping
-var toolShortcuts = map[string]string{
-	"q-cli":          filepath.Join("${HOME}", ".aws", "amazonq", "mcp.json"),
-	"claude-desktop": filepath.Join("${HOME}", "Library", "Application Support", "Claude", "claude_desktop_config.json"),
-	"cursor":         filepath.Join("${HOME}", ".cursor", "mcp.json"),
-	"kiro":           filepath.Join("${HOME}", ".kiro", "settings", "mcp.json"),
-}
-
 // setCmd represents the set command
 var setCmd = &cobra.Command{
 	Use:   "set [profile]",
@@ -111,17 +103,10 @@ func getOutputPath(envVars map[string]string) (string, error) {
 	}
 
 	if toolShortcut != "" {
-		path, exists := toolShortcuts[toolShortcut]
-		if !exists {
+		path := getPlatformToolPath(toolShortcut)
+		if path == "" {
 			return "", fmt.Errorf("unknown tool shortcut: %s", toolShortcut)
 		}
-
-		// Replace ${HOME} with actual home directory
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
-		path = strings.Replace(path, "${HOME}", homeDir, 1)
 
 		// Create directory if it doesn't exist
 		dir := filepath.Dir(path)

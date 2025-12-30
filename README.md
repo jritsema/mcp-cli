@@ -14,6 +14,38 @@ Model Context Protocol (MCP) is a new technology and still evolving. As I've bee
 
 I decided to write up some specs for a tool (written in Go) that could help with these pain points and try to "vibe code" it. This is the result. Please don't judge the code quality. I didn't write or edit a single line :)
 
+## Installation
+
+### macOS and Linux
+
+Download the appropriate binary for your platform from the [releases page](https://github.com/
+jritsema/mcp-cli/releases):
+
+- macOS AMD64: `mcp-darwin-amd64`
+- macOS ARM64: `mcp-darwin-arm64`
+- Linux AMD64: `mcp-linux-amd64`
+
+Make the binary executable and move it to your PATH:
+
+```sh
+chmod +x mcp-darwin-arm64
+sudo mv mcp-darwin-arm64 /usr/local/bin/mcp
+```
+
+### Windows
+
+Download the appropriate Windows binary for your architecture from the [releases page](https://github.com/
+jritsema/mcp-cli/releases):
+
+- **Windows AMD64** (most common): `mcp-windows-amd64.zip`
+- **Windows ARM64** (Surface devices, ARM VMs): `mcp-windows-arm64.zip`
+
+#### Installation Steps
+
+1. Download the appropriate `.zip` file for your architecture
+2. Extract the `.exe` file from the archive
+3. Move `mcp.exe` to a directory in your PATH, or add the directory to your PATH
+
 ## Usage
 
 MCP CLI simplifies managing MCP server configurations through a YAML-based approach.
@@ -111,10 +143,18 @@ mcp clear -c /path/to/output/mcp.json
 
 MCP CLI supports these predefined tool shortcuts for popular AI tools:
 
-- `q-cli` - Amazon Q CLI (`$HOME/.aws/amazonq/mcp.json`)
-- `claude-desktop` - Claude Desktop (`$HOME/Library/Application Support/Claude/claude_desktop_config.json`)
-- `cursor` - Cursor IDE (`$HOME/.cursor/mcp.json`)
-- `kiro` - Kiro IDE (`$HOME/.kiro/settings/mcp.json`)
+- `q-cli` - Amazon Q CLI
+  - macOS/Linux: `$HOME/.aws/amazonq/mcp.json`
+  - Windows: `%USERPROFILE%\.aws\amazonq\mcp.json`
+- `claude-desktop` - Claude Desktop
+  - macOS: `$HOME/Library/Application Support/Claude/claude_desktop_config.json`
+  - Windows: `%USERPROFILE%\AppData\Roaming\Claude\claude_desktop_config.json`
+- `cursor` - Cursor IDE
+  - macOS/Linux: `$HOME/.cursor/mcp.json`
+  - Windows: `%USERPROFILE%\.cursor\mcp.json`
+- `kiro` - Kiro IDE
+  - macOS/Linux: `$HOME/.kiro/settings/mcp.json`
+  - Windows: `%USERPROFILE%\.kiro\settings\mcp.json`
 
 ### Setting Default AI Tool
 
@@ -284,6 +324,7 @@ services:
   build         build a binary
   autobuild     auto build when source files change
   dockerbuild   build project into a docker container image
+  build-all     build binaries for all platforms
   start         build and run local project
   deploy        build code into a container and deploy it to the cloud dev environment
 ```
