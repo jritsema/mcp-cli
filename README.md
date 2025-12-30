@@ -209,11 +209,37 @@ Services without the label are considered defaults.
 
 ### Remote MCP Servers
 
-MCP CLI supports remote MCP servers that use `Streamable HTTP` transport with OAuth 2.0 authentication. Remote servers are identified by URLs starting with `https://` in the command field.
+MCP CLI supports remote MCP servers that use `Streamable HTTP` transport. Remote servers are identified by URLs starting with `https://` or `http://` in the command field.
 
-#### Configuration
+MCP CLI supports two authentication methods for remote servers:
 
-To configure a remote MCP server, use the following format in your `mcp-compose.yml`:
+1. **Headers-based authentication** - For API keys and custom headers
+2. **OAuth 2.0 authentication** - For client credentials flow
+
+#### Headers-Based Authentication
+
+For remote servers that use API keys or custom headers (like [Context7](https://context7.com)), use `mcp.header.*` labels:
+
+```yaml
+services:
+  context7:
+    command: https://mcp.context7.com/mcp
+    labels:
+      mcp.header.Authorization: Bearer ${CONTEXT7_API_KEY}
+
+  # Multiple headers example
+  custom-server:
+    command: https://api.example.com/mcp
+    labels:
+      mcp.header.X-API-Key: ${API_KEY}
+      mcp.header.X-Custom-Header: some-value
+```
+
+The header name is everything after `mcp.header.` - so `mcp.header.Authorization` becomes the `Authorization` header. Environment variables in header values are automatically expanded.
+
+#### OAuth 2.0 Authentication
+
+For remote servers that use OAuth 2.0 client credentials flow:
 
 ```yaml
 services:
@@ -226,7 +252,7 @@ services:
       mcp.client-secret: ${REMOTE_CLIENT_SECRET}
 ```
 
-#### Required Labels for Remote Servers
+**Required OAuth Labels:**
 
 - `mcp.grant-type`: Must be "client_credentials"
 - `mcp.token-endpoint`: OAuth 2.0 token endpoint URL
@@ -235,9 +261,13 @@ services:
 
 #### Environment Variables
 
-Set your OAuth credentials in your environment or `.env` file:
+Set your credentials in your environment or `.env` file:
 
 ```bash
+# For headers-based auth
+CONTEXT7_API_KEY=your_api_key_here
+
+# For OAuth
 REMOTE_CLIENT_ID=your_client_id_here
 REMOTE_CLIENT_SECRET=your_client_secret_here
 ```
@@ -246,21 +276,29 @@ REMOTE_CLIENT_SECRET=your_client_secret_here
 
 Remote MCP servers are currently supported by:
 
+- `cursor` - Cursor IDE
 - `kiro` - Kiro IDE
 - `q-cli` - Amazon Q CLI
-
 
 #### Authentication Flow
 
 When deploying remote servers, MCP CLI will:
+
+**For headers-based auth:**
+
+1. Extract headers from `mcp.header.*` labels
+2. Expand environment variables in header values
+3. Generate MCP configuration with HTTP transport and headers
+
+**For OAuth:**
 
 1. Validate the OAuth configuration
 2. Acquire an access token using the client credentials flow
 3. Generate MCP configuration with HTTP transport and authorization headers
 
 ```sh
-# Deploy remote servers (will show "acquiring access token..." message)
-mcp set
+# Deploy remote servers
+mcp set -t cursor
 ```
 
 ## How?
