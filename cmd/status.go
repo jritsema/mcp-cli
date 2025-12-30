@@ -12,35 +12,28 @@ import (
 // Returns parsed MCPConfig or error if file doesn't exist
 // Handles missing files gracefully (returns empty config)
 func loadToolConfig(toolShortcut string) (MCPConfig, string, error) {
-	path, exists := toolShortcuts[toolShortcut]
-	if !exists {
+	path := getPlatformToolPath(toolShortcut)
+	if path == "" {
 		return MCPConfig{}, "", fmt.Errorf("unknown tool shortcut: %s", toolShortcut)
 	}
 
-	// Replace ${HOME} with actual home directory
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return MCPConfig{}, "", err
-	}
-	expandedPath := strings.Replace(path, "${HOME}", homeDir, 1)
-
 	// Check if file exists
-	if _, err := os.Stat(expandedPath); os.IsNotExist(err) {
-		return MCPConfig{}, expandedPath, nil // Return empty config for missing file
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return MCPConfig{}, path, nil // Return empty config for missing file
 	}
 
 	// Read and parse the config file
-	data, err := os.ReadFile(expandedPath)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return MCPConfig{}, expandedPath, fmt.Errorf("error reading config file: %w", err)
+		return MCPConfig{}, path, fmt.Errorf("error reading config file: %w", err)
 	}
 
 	var config MCPConfig
 	if err := json.Unmarshal(data, &config); err != nil {
-		return MCPConfig{}, expandedPath, fmt.Errorf("error parsing config file: %w", err)
+		return MCPConfig{}, path, fmt.Errorf("error parsing config file: %w", err)
 	}
 
-	return config, expandedPath, nil
+	return config, path, nil
 }
 
 // getToolConfigs loads MCP configs for all specified tools
@@ -53,20 +46,20 @@ func getToolConfigs(tools []string) map[string]ToolConfig {
 		config, path, err := loadToolConfig(tool)
 		if err != nil {
 			result[tool] = ToolConfig{
-				Config:  MCPConfig{},
-				Path:    path,
-				Exists:  false,
-				Error:   err.Error(),
+				Config: MCPConfig{},
+				Path:   path,
+				Exists: false,
+				Error:  err.Error(),
 			}
 			continue
 		}
 
 		exists := path != "" && fileExists(path)
 		result[tool] = ToolConfig{
-			Config:  config,
-			Path:    path,
-			Exists:  exists,
-			Error:   "",
+			Config: config,
+			Path:   path,
+			Exists: exists,
+			Error:  "",
 		}
 	}
 

@@ -7,6 +7,9 @@ import (
 	"runtime"
 )
 
+// supportedTools lists all supported tool shortcuts
+var supportedTools = []string{"q-cli", "claude-desktop", "cursor", "kiro"}
+
 // getPlatformToolPath returns the platform-appropriate path for a tool
 // Hard fails on error, consistent with getConfigDir() in config.go
 func getPlatformToolPath(tool string) string {

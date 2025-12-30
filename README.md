@@ -106,6 +106,37 @@ mcp ls -f ./custom-mcp-compose.yml
 
 The output format shows NAME, PROFILES, COMMAND, and ENVVARS columns.
 
+### Checking Deployment Status
+
+See which servers are deployed to which tools:
+
+```sh
+# Show deployment status across all tools
+mcp ls -s
+
+# Show status for a specific tool only
+mcp ls -s -t cursor
+
+# Show detailed status with server types
+mcp ls -s -l
+```
+
+Example output:
+
+```
+NAME      PROFILES     Q-CLI   CLAUDE   CURSOR   KIRO
+----      --------     -----   ------   ------   ----
+time      default      ✓       ✗        ✓        ✗
+github    programming  ✓       ✓        ~        ✗
+```
+
+Status indicators:
+
+- `✓` - Server is configured and matches
+- `✗` - Server is not configured
+- `~` - Server is configured but differs from compose file
+- `?` - Unable to read tool config
+
 ### Setting MCP Configurations
 
 Deploy your MCP server configurations to supported tools:

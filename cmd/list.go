@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	allServers  bool
-	longFormat  bool
-	showStatus  bool
-	toolFilter  string
-	allTools    bool
+	allServers bool
+	longFormat bool
+	showStatus bool
+	toolFilter string
+	allTools   bool
 )
 
 // listCmd represents the list command
@@ -226,23 +226,17 @@ func displayServersWithStatus(servers map[string]Service) {
 	var tools []string
 	if toolFilter != "" {
 		// Check if tool shortcut exists
-		if _, exists := toolShortcuts[toolFilter]; !exists {
+		if getPlatformToolPath(toolFilter) == "" {
 			fmt.Fprintf(os.Stderr, "Error: unknown tool shortcut: %s\n", toolFilter)
 			os.Exit(1)
 		}
 		tools = []string{toolFilter}
 	} else if allTools {
 		// Get all tool shortcuts
-		for tool := range toolShortcuts {
-			tools = append(tools, tool)
-		}
-		sort.Strings(tools)
+		tools = supportedTools
 	} else {
 		// Default: show all tools
-		for tool := range toolShortcuts {
-			tools = append(tools, tool)
-		}
-		sort.Strings(tools)
+		tools = supportedTools
 	}
 
 	// Load environment variables for comparison
