@@ -106,6 +106,27 @@ mcp ls -f ./custom-mcp-compose.yml
 
 The output format shows NAME, PROFILES, COMMAND, and ENVVARS columns.
 
+### Setting MCP Configurations
+
+Deploy your MCP server configurations to supported tools:
+
+```sh
+# Set default servers for Amazon Q CLI
+mcp set -t q-cli
+
+# Set programming profile servers for Cursor
+mcp set programming -t cursor
+
+# Set a specific server for Claude Desktop
+mcp set -t claude-desktop -s github
+
+# Set programming profile servers for Kiro IDE
+mcp set programming -t kiro
+
+# Use a custom output location
+mcp set -c /path/to/output/mcp.json
+```
+
 ### Checking Deployment Status
 
 See which servers are deployed to which tools:
@@ -136,27 +157,6 @@ Status indicators:
 - `✗` - Server is not configured
 - `~` - Server is configured but differs from compose file
 - `?` - Unable to read tool config
-
-### Setting MCP Configurations
-
-Deploy your MCP server configurations to supported tools:
-
-```sh
-# Set default servers for Amazon Q CLI
-mcp set -t q-cli
-
-# Set programming profile servers for Cursor
-mcp set programming -t cursor
-
-# Set a specific server for Claude Desktop
-mcp set -t claude-desktop -s github
-
-# Set programming profile servers for Kiro IDE
-mcp set programming -t kiro
-
-# Use a custom output location
-mcp set -c /path/to/output/mcp.json
-```
 
 ### Clearing MCP Configurations
 
