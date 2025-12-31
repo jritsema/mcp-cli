@@ -100,9 +100,17 @@ mcp ls -a
 # List servers with specific profile
 mcp ls programming
 
+# Show detailed information (command and env vars)
+mcp ls -l
+
+# Show executable command with expanded environment variables
+mcp ls -c
+
 # Use a custom configuration file
 mcp ls -f ./custom-mcp-compose.yml
 ```
+
+The `-c` flag outputs copy-paste ready commands with environment variables expanded and prepended inline. This is useful for AI agents or scripts that need to execute MCP servers directly. Note: This may expose sensitive data such as API keys.
 
 The output format shows NAME, PROFILES, COMMAND, and ENVVARS columns.
 
