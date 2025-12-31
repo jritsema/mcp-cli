@@ -13,11 +13,12 @@ import (
 )
 
 var (
-	allServers bool
-	longFormat bool
-	showStatus bool
-	toolFilter string
-	allTools   bool
+	allServers    bool
+	longFormat    bool
+	showStatus    bool
+	toolFilter    string
+	allTools      bool
+	commandFormat bool
 )
 
 // listCmd represents the list command
@@ -30,7 +31,8 @@ Without arguments, it lists all default servers.
 With a profile argument, it lists all servers with that profile.
 With the -a flag, it lists all servers.
 With the -l flag, it shows detailed information including command and environment variables.
-With the -s flag, it shows deployment status across configured tools.`,
+With the -s flag, it shows deployment status across configured tools.
+With the -c flag, it shows the executable command with environment variables expanded and inline.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := loadComposeFile(composeFile)
 		if err != nil {
@@ -62,6 +64,7 @@ func init() {
 	listCmd.Flags().BoolVarP(&showStatus, "status", "s", false, "Show deployment status across configured tools")
 	listCmd.Flags().StringVarP(&toolFilter, "tool", "t", "", "Show status for specific tool only (q-cli, claude-desktop, cursor, kiro)")
 	listCmd.Flags().BoolVar(&allTools, "all-tools", false, "Show status across all supported tools")
+	listCmd.Flags().BoolVarP(&commandFormat, "command", "c", false, "Show executable command with environment variables expanded inline. WARNING: may expose sensitive data such as API keys and secrets")
 }
 
 func displayServers(servers map[string]Service) {
@@ -70,12 +73,26 @@ func displayServers(servers map[string]Service) {
 		return
 	}
 
+	// Load environment variables if command format flag is set
+	var envVars map[string]string
+	if commandFormat {
+		var err error
+		envVars, err = loadEnvVars(composeFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: error loading environment variables: %v\n", err)
+			envVars = make(map[string]string)
+		}
+	}
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 	// Display headers based on format
-	if longFormat {
-		fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND (TYPE)\tENVVARS")
-		fmt.Fprintln(w, "----\t--------\t--------------\t-------")
+	if commandFormat {
+		fmt.Fprintln(w, "NAME\tCOMMAND")
+		fmt.Fprintln(w, "----\t-------")
+	} else if longFormat {
+		fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND\tENVVARS")
+		fmt.Fprintln(w, "----\t--------\t-------\t-------")
 	} else {
 		fmt.Fprintln(w, "NAME\tPROFILES")
 		fmt.Fprintln(w, "----\t--------")
@@ -86,7 +103,7 @@ func displayServers(servers map[string]Service) {
 	if err != nil {
 		// If we can't load the file again, just use the map order
 		for name, service := range servers {
-			printServerRow(w, name, service)
+			printServerRow(w, name, service, envVars)
 		}
 	} else {
 		// Create two lists: one for default servers and one for non-default servers
@@ -127,20 +144,33 @@ func displayServers(servers map[string]Service) {
 
 		// Print default servers first (alphabetically sorted)
 		for _, name := range defaultServers {
-			printServerRow(w, name, servers[name])
+			printServerRow(w, name, servers[name], envVars)
 		}
 
 		// Then print other servers (alphabetically sorted)
 		for _, name := range otherServers {
-			printServerRow(w, name, servers[name])
+			printServerRow(w, name, servers[name], envVars)
 		}
 	}
 
 	w.Flush()
 }
 
+// shellQuote quotes a string for safe use in shell commands
+func shellQuote(s string) string {
+	// If the string contains no special characters, return as-is
+	if !strings.ContainsAny(s, " \t\n\"'\\`!") {
+		return s
+	}
+	// Use double quotes and escape special characters (but not $, to preserve unexpanded vars)
+	escaped := strings.ReplaceAll(s, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+	escaped = strings.ReplaceAll(escaped, "`", "\\`")
+	return "\"" + escaped + "\""
+}
+
 // Helper function to print a single server row
-func printServerRow(w *tabwriter.Writer, name string, service Service) {
+func printServerRow(w *tabwriter.Writer, name string, service Service, envVars map[string]string) {
 	// Get profiles
 	var profiles []string
 	if profilesStr, ok := service.Labels["mcp.profile"]; ok {
@@ -154,15 +184,81 @@ func printServerRow(w *tabwriter.Writer, name string, service Service) {
 	}
 	profilesStr := strings.Join(profiles, ", ")
 
-	if longFormat {
+	if commandFormat {
+		// Command format: NAME + executable command with env vars inline
 		var commandStr string
-		var serverType string
 
 		// Check if this is a remote server
 		if IsRemoteServer(service) {
-			// For remote servers, show the URL and indicate it's remote
+			// For remote servers, just show the URL
 			commandStr = service.Command
-			serverType = "remote"
+		} else {
+			// Build env var prefix for the command
+			var envPrefix string
+			if !IsRemoteServer(service) && len(service.Environment) > 0 {
+				var envParts []string
+				// Sort keys for consistent output
+				var keys []string
+				for key := range service.Environment {
+					keys = append(keys, key)
+				}
+				sort.Strings(keys)
+				for _, key := range keys {
+					value := service.Environment[key]
+					expandedValue := expandEnvVars(value, envVars)
+					envParts = append(envParts, fmt.Sprintf("%s=%s", key, shellQuote(expandedValue)))
+				}
+				envPrefix = strings.Join(envParts, " ") + " "
+			}
+
+			// Get the container tool from config, default to "docker"
+			containerTool := "docker"
+			configDir := getConfigDir()
+			configPath := filepath.Join(configDir, "config.json")
+
+			if _, err := os.Stat(configPath); err == nil {
+				data, err := os.ReadFile(configPath)
+				if err == nil {
+					var config CLIConfig
+					if err := json.Unmarshal(data, &config); err == nil && config.ContainerTool != "" {
+						containerTool = config.ContainerTool
+					}
+				}
+			}
+
+			if service.Image != "" {
+				// For image-based servers, show the container run command format
+				commandStr = fmt.Sprintf("%s run -i --rm", containerTool)
+
+				// Add environment variables as -e flags
+				var keys []string
+				for key := range service.Environment {
+					keys = append(keys, key)
+				}
+				sort.Strings(keys)
+				for _, key := range keys {
+					value := service.Environment[key]
+					expandedValue := expandEnvVars(value, envVars)
+					commandStr += fmt.Sprintf(" -e %s=%s", key, shellQuote(expandedValue))
+				}
+
+				// Add the image name
+				commandStr += fmt.Sprintf(" %s", service.Image)
+			} else {
+				// For command-based servers, prepend env vars and expand command
+				expandedCommand := expandEnvVars(service.Command, envVars)
+				commandStr = envPrefix + expandedCommand
+			}
+		}
+
+		fmt.Fprintf(w, "%s\t%s\n", name, commandStr)
+	} else if longFormat {
+		var commandStr string
+
+		// Check if this is a remote server
+		if IsRemoteServer(service) {
+			// For remote servers, show the URL
+			commandStr = service.Command
 		} else {
 			// Get the container tool from config, default to "docker"
 			containerTool := "docker"
@@ -190,25 +286,23 @@ func printServerRow(w *tabwriter.Writer, name string, service Service) {
 
 				// Add the image name
 				commandStr += fmt.Sprintf(" %s", service.Image)
-				serverType = "container"
 			} else {
 				// For command-based servers, show the command
 				commandStr = service.Command
-				serverType = "local"
 			}
 		}
 
 		// Get environment variables (only for local servers, remote servers use OAuth)
-		var envVars []string
+		var envVarsDisplay []string
 		if !IsRemoteServer(service) {
 			for key := range service.Environment {
-				envVars = append(envVars, key)
+				envVarsDisplay = append(envVarsDisplay, key)
 			}
 		}
-		envVarsStr := strings.Join(envVars, ", ")
+		sort.Strings(envVarsDisplay)
+		envVarsStr := strings.Join(envVarsDisplay, ", ")
 
-		// Include server type in the output to distinguish remote vs local servers
-		fmt.Fprintf(w, "%s\t%s\t%s (%s)\t%s\n", name, profilesStr, commandStr, serverType, envVarsStr)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr)
 	} else {
 		// Simple format with just name and profiles
 		fmt.Fprintf(w, "%s\t%s\n", name, profilesStr)
