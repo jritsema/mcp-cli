@@ -218,6 +218,12 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 				args = append(args, "-e", fmt.Sprintf("%s=%s", key, expandedValue))
 			}
 
+			// Add volume mounts with expanded values
+			for _, volume := range service.Volumes {
+				expandedVolume := expandEnvVars(volume, envVars)
+				args = append(args, "-v", expandedVolume)
+			}
+
 			// Expand image name if it contains env vars
 			expandedImage := expandEnvVars(service.Image, envVars)
 			args = append(args, expandedImage)
