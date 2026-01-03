@@ -242,6 +242,12 @@ func printServerRow(w *tabwriter.Writer, name string, service Service, envVars m
 					commandStr += fmt.Sprintf(" -e %s=%s", key, shellQuote(expandedValue))
 				}
 
+				// Add volume mounts as -v flags
+				for _, volume := range service.Volumes {
+					expandedVolume := expandEnvVars(volume, envVars)
+					commandStr += fmt.Sprintf(" -v %s", shellQuote(expandedVolume))
+				}
+
 				// Add the image name
 				commandStr += fmt.Sprintf(" %s", service.Image)
 			} else {
@@ -282,6 +288,11 @@ func printServerRow(w *tabwriter.Writer, name string, service Service, envVars m
 				// Add environment variables to the command
 				for key := range service.Environment {
 					commandStr += fmt.Sprintf(" -e %s", key)
+				}
+
+				// Add volume mounts to the command
+				for _, volume := range service.Volumes {
+					commandStr += fmt.Sprintf(" -v %s", volume)
 				}
 
 				// Add the image name

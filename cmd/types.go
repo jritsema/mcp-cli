@@ -91,6 +91,7 @@ type Service struct {
 	Image       string            `yaml:"image"`
 	Environment map[string]string `yaml:"environment"`
 	Labels      map[string]string `yaml:"labels"`
+	Volumes     []string          `yaml:"volumes"`
 }
 
 // MCPConfig represents the MCP JSON configuration format
@@ -151,8 +152,8 @@ type ToolStatus struct {
 
 // ToolConfig represents a tool's configuration with metadata
 type ToolConfig struct {
-	Config  MCPConfig
-	Path    string
-	Exists  bool
-	Error   string
+	Config MCPConfig
+	Path   string
+	Exists bool
+	Error  string
 }

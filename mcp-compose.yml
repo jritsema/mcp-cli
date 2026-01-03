@@ -1,5 +1,4 @@
 services:
-
   # default mcp servers
 
   time:
@@ -7,7 +6,6 @@ services:
 
   fetch:
     command: uvx mcp-server-fetch
-
 
   # programming
 
@@ -30,7 +28,6 @@ services:
     labels:
       mcp.profile: programming, database
 
-
   # Container based MCP servers
 
   github-docker:
@@ -46,3 +43,12 @@ services:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
       mcp.profile: programming, research
+
+  # Example with volume mounts
+  filesystem:
+    image: mcp/filesystem
+    volumes:
+      - ${HOME}/projects:/workspace:ro
+      - /tmp:/tmp
+    labels:
+      mcp.profile: programming

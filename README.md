@@ -389,6 +389,15 @@ services:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
       mcp.profile: programming, research
+
+  # Container with volume mounts
+  filesystem:
+    image: mcp/filesystem
+    volumes:
+      - ${HOME}/projects:/workspace:ro
+      - /tmp:/tmp
+    labels:
+      mcp.profile: programming
 ```
 
 ## Development
