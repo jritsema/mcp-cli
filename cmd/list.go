@@ -13,12 +13,13 @@ import (
 )
 
 var (
-	allServers    bool
-	longFormat    bool
-	showStatus    bool
-	toolFilter    string
-	allTools      bool
-	commandFormat bool
+	allServers      bool
+	longFormat      bool
+	showStatus      bool
+	toolFilter      string
+	allTools        bool
+	commandFormat   bool
+	showDescription bool
 )
 
 // listCmd represents the list command
@@ -32,8 +33,16 @@ With a profile argument, it lists all servers with that profile.
 With the -a flag, it lists all servers.
 With the -l flag, it shows detailed information including command and environment variables.
 With the -s flag, it shows deployment status across configured tools.
-With the -c flag, it shows the executable command with environment variables expanded and inline.`,
+With the -c flag, it shows the executable command with environment variables expanded and inline.
+With the -d flag, it shows server descriptions from the mcp.description label.
+Descriptions are truncated to 60 characters by default; use -c with -d to show full descriptions.
+The -d flag cannot be combined with -s, -t, or --all-tools flags.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := validateDescriptionFlag(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 		config, err := loadComposeFile(composeFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading compose file: %v\n", err)
@@ -65,6 +74,16 @@ func init() {
 	listCmd.Flags().StringVarP(&toolFilter, "tool", "t", "", "Show status for specific tool only (q-cli, claude-desktop, cursor, kiro)")
 	listCmd.Flags().BoolVar(&allTools, "all-tools", false, "Show status across all supported tools")
 	listCmd.Flags().BoolVarP(&commandFormat, "command", "c", false, "Show executable command with environment variables expanded inline. WARNING: may expose sensitive data such as API keys and secrets")
+	listCmd.Flags().BoolVarP(&showDescription, "description", "d", false, "Show server descriptions")
+}
+
+// validateDescriptionFlag checks for incompatible flag combinations with -d/--description
+func validateDescriptionFlag() error {
+	if showDescription && (showStatus || toolFilter != "" || allTools) {
+		return fmt.Errorf("the -d/--description flag cannot be combined with " +
+			"-s/--status, -t/--tool, or --all-tools flags")
+	}
+	return nil
 }
 
 func displayServers(servers map[string]Service) {
@@ -88,14 +107,29 @@ func displayServers(servers map[string]Service) {
 
 	// Display headers based on format
 	if commandFormat {
-		fmt.Fprintln(w, "NAME\tCOMMAND")
-		fmt.Fprintln(w, "----\t-------")
+		if showDescription {
+			fmt.Fprintln(w, "NAME\tCOMMAND\tDESCRIPTION")
+			fmt.Fprintln(w, "----\t-------\t-----------")
+		} else {
+			fmt.Fprintln(w, "NAME\tCOMMAND")
+			fmt.Fprintln(w, "----\t-------")
+		}
 	} else if longFormat {
-		fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND\tENVVARS")
-		fmt.Fprintln(w, "----\t--------\t-------\t-------")
+		if showDescription {
+			fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND\tENVVARS\tDESCRIPTION")
+			fmt.Fprintln(w, "----\t--------\t-------\t-------\t-----------")
+		} else {
+			fmt.Fprintln(w, "NAME\tPROFILES\tCOMMAND\tENVVARS")
+			fmt.Fprintln(w, "----\t--------\t-------\t-------")
+		}
 	} else {
-		fmt.Fprintln(w, "NAME\tPROFILES")
-		fmt.Fprintln(w, "----\t--------")
+		if showDescription {
+			fmt.Fprintln(w, "NAME\tPROFILES\tDESCRIPTION")
+			fmt.Fprintln(w, "----\t--------\t-----------")
+		} else {
+			fmt.Fprintln(w, "NAME\tPROFILES")
+			fmt.Fprintln(w, "----\t--------")
+		}
 	}
 
 	// Get the original order from the compose file
@@ -257,7 +291,13 @@ func printServerRow(w *tabwriter.Writer, name string, service Service, envVars m
 			}
 		}
 
-		fmt.Fprintf(w, "%s\t%s\n", name, commandStr)
+		if showDescription {
+			// Command format shows full description without truncation
+			desc := GetDescription(service)
+			fmt.Fprintf(w, "%s\t%s\t%s\n", name, commandStr, desc)
+		} else {
+			fmt.Fprintf(w, "%s\t%s\n", name, commandStr)
+		}
 	} else if longFormat {
 		var commandStr string
 
@@ -313,10 +353,24 @@ func printServerRow(w *tabwriter.Writer, name string, service Service, envVars m
 		sort.Strings(envVarsDisplay)
 		envVarsStr := strings.Join(envVarsDisplay, ", ")
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr)
+		if showDescription {
+			// Long format shows truncated description
+			desc := GetDescription(service)
+			truncatedDesc := TruncateDescription(desc, MaxDescriptionLength)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr, truncatedDesc)
+		} else {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", name, profilesStr, commandStr, envVarsStr)
+		}
 	} else {
 		// Simple format with just name and profiles
-		fmt.Fprintf(w, "%s\t%s\n", name, profilesStr)
+		if showDescription {
+			// Simple format shows truncated description
+			desc := GetDescription(service)
+			truncatedDesc := TruncateDescription(desc, MaxDescriptionLength)
+			fmt.Fprintf(w, "%s\t%s\t%s\n", name, profilesStr, truncatedDesc)
+		} else {
+			fmt.Fprintf(w, "%s\t%s\n", name, profilesStr)
+		}
 	}
 }
 

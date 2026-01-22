@@ -157,3 +157,26 @@ type ToolConfig struct {
 	Exists bool
 	Error  string
 }
+
+// GetDescription extracts the description from a service's labels.
+// Returns the value of the "mcp.description" label if present,
+// or an empty string if the label is not set.
+func GetDescription(service Service) string {
+	if desc, ok := service.Labels["mcp.description"]; ok {
+		return desc
+	}
+	return ""
+}
+
+// MaxDescriptionLength is the maximum length for truncated descriptions
+const MaxDescriptionLength = 60
+
+// TruncateDescription truncates a description string to the specified maximum length.
+// If the string is longer than maxLen, it is truncated and "..." is appended.
+// If the string is within the limit, it is returned unchanged.
+func TruncateDescription(desc string, maxLen int) string {
+	if len(desc) <= maxLen {
+		return desc
+	}
+	return desc[:maxLen-3] + "..."
+}
