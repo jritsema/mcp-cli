@@ -63,7 +63,7 @@ If no profile is specified, it uses default servers.`,
 
 		// Validate remote servers have required auth configuration (OAuth or headers)
 		for name, service := range servers {
-			if IsRemoteServer(service) {
+			if IsRemoteServerWithEnvExpansion(service, envVars) {
 				if err := ValidateRemoteServerAuth(name, service); err != nil {
 					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 					os.Exit(1)
@@ -72,7 +72,7 @@ If no profile is specified, it uses default servers.`,
 		}
 
 		// Validate tool compatibility with remote servers
-		if err := ValidateToolSupport(toolShortcut, servers); err != nil {
+		if err := ValidateToolSupportWithEnvExpansion(toolShortcut, servers, envVars); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -160,10 +160,10 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 	for name, service := range servers {
 		var mcpServer MCPServer
 
-		if IsRemoteServer(service) {
+		if IsRemoteServerWithEnvExpansion(service, envVars) {
 			// Remote server - use HTTP-based configuration
 			mcpServer.Type = "http"
-			mcpServer.URL = service.Command
+			mcpServer.URL = expandEnvVars(service.Command, envVars)
 
 			// Merge service environment variables into envVars for expansion
 			serviceEnvVars := make(map[string]string)
@@ -245,7 +245,7 @@ func convertToMCPConfig(servers map[string]Service, envVars map[string]string) M
 		}
 
 		// Add environment variables with expanded values (only for local servers)
-		if !IsRemoteServer(service) && len(service.Environment) > 0 {
+		if !IsRemoteServerWithEnvExpansion(service, envVars) && len(service.Environment) > 0 {
 			expandedEnv := make(map[string]string)
 			for key, value := range service.Environment {
 				// Expand environment variables in the output JSON

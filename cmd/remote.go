@@ -16,6 +16,12 @@ func IsRemoteServer(service Service) bool {
 	return strings.HasPrefix(service.Command, "https://") || strings.HasPrefix(service.Command, "http://")
 }
 
+// IsRemoteServerWithEnvExpansion detects if a service is a remote MCP server after expanding environment variables
+func IsRemoteServerWithEnvExpansion(service Service, envVars map[string]string) bool {
+	expandedCommand := expandEnvVars(service.Command, envVars)
+	return strings.HasPrefix(expandedCommand, "https://") || strings.HasPrefix(expandedCommand, "http://")
+}
+
 // UsesHeadersAuth checks if a remote server uses headers-based authentication instead of OAuth
 func UsesHeadersAuth(service Service) bool {
 	// Check if any mcp.header.* labels exist
@@ -128,6 +134,30 @@ func ValidateToolSupport(toolShortcut string, servers map[string]Service) error 
 	hasRemoteServers := false
 	for _, service := range servers {
 		if IsRemoteServer(service) {
+			hasRemoteServers = true
+			break
+		}
+	}
+
+	if hasRemoteServers && toolShortcut != "" {
+		if !remoteSupportedTools[toolShortcut] {
+			supportedTools := make([]string, 0, len(remoteSupportedTools))
+			for tool := range remoteSupportedTools {
+				supportedTools = append(supportedTools, tool)
+			}
+			return fmt.Errorf("tool '%s' does not support remote MCP servers. Supported tools: %s",
+				toolShortcut, strings.Join(supportedTools, ", "))
+		}
+	}
+
+	return nil
+}
+
+// ValidateToolSupportWithEnvExpansion validates that the specified tool supports remote servers after environment expansion
+func ValidateToolSupportWithEnvExpansion(toolShortcut string, servers map[string]Service, envVars map[string]string) error {
+	hasRemoteServers := false
+	for _, service := range servers {
+		if IsRemoteServerWithEnvExpansion(service, envVars) {
 			hasRemoteServers = true
 			break
 		}
