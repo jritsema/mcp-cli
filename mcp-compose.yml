@@ -3,6 +3,8 @@ services:
 
   time:
     command: uvx mcp-server-time --local-timezone=America/New_York
+    labels:
+      mcp.description: Get the current time for a configured timezone
 
   fetch:
     command: uvx mcp-server-fetch

@@ -171,12 +171,21 @@ func GetDescription(service Service) string {
 // MaxDescriptionLength is the maximum length for truncated descriptions
 const MaxDescriptionLength = 60
 
-// TruncateDescription truncates a description string to the specified maximum length.
-// If the string is longer than maxLen, it is truncated and "..." is appended.
-// If the string is within the limit, it is returned unchanged.
+// TruncateDescription truncates a description to maxLen runes. If it is longer,
+// it appends "..." while keeping the result within maxLen runes. Limits shorter
+// than the ellipsis return the leading runes because an ellipsis will not fit.
 func TruncateDescription(desc string, maxLen int) string {
-	if len(desc) <= maxLen {
+	if maxLen <= 0 {
+		return ""
+	}
+
+	runes := []rune(desc)
+	if len(runes) <= maxLen {
 		return desc
 	}
-	return desc[:maxLen-3] + "..."
+	if maxLen <= len("...") {
+		return string(runes[:maxLen])
+	}
+
+	return string(runes[:maxLen-len("...")]) + "..."
 }

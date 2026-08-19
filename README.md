@@ -106,13 +106,35 @@ mcp ls -l
 # Show executable command with expanded environment variables
 mcp ls -c
 
+# Show descriptions defined with mcp.description labels
+mcp ls -d
+
+# Show full descriptions with executable commands
+mcp ls -c -d
+
 # Use a custom configuration file
 mcp ls -f ./custom-mcp-compose.yml
 ```
 
 The `-c` flag outputs copy-paste ready commands with environment variables expanded and prepended inline. This is useful for AI agents or scripts that need to execute MCP servers directly. Note: This may expose sensitive data such as API keys.
 
-The output format shows NAME, PROFILES, COMMAND, and ENVVARS columns.
+Use the `mcp.description` label to add a short explanation of a server. `mcp ls -d` adds a DESCRIPTION column and truncates descriptions to 60 characters; combine it with `-c` to show full descriptions. The `-d` flag cannot be combined with status options (`-s`, `-t`, or `--all-tools`).
+
+The output format shows NAME, PROFILES, COMMAND, ENVVARS, and optionally DESCRIPTION columns.
+
+### Dynamic Tool Discovery
+
+Agents and scripts can discover available MCP servers and, when needed, get the command to start one on demand:
+
+```sh
+# List every server with its profiles and optional description
+mcp ls -ad
+
+# Also include copy-paste-ready commands for direct execution
+mcp ls -acd
+```
+
+Use `mcp ls -ad` when presenting or selecting available servers: it does not expand environment variables. Add `-c` only when the caller needs an executable command, because expanded environment variables can expose secrets.
 
 ### Setting MCP Configurations
 
