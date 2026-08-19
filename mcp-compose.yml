@@ -8,6 +8,8 @@ services:
 
   fetch:
     command: uvx mcp-server-fetch
+    labels:
+      mcp.description: Fetch and convert web content for LLM use
 
   # programming
 
@@ -17,6 +19,7 @@ services:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}
     labels:
       mcp.profile: programming
+      mcp.description: Manage GitHub repositories, issues, pull requests, and code
 
   aws-docs:
     command: uvx awslabs.aws-documentation-mcp-server@latest
@@ -24,11 +27,13 @@ services:
       FASTMCP_LOG_LEVEL: "${FASTMCP_LOG_LEVEL}"
     labels:
       mcp.profile: programming
+      mcp.description: Search and retrieve AWS documentation
 
   postgres:
     command: npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb
     labels:
       mcp.profile: programming, database
+      mcp.description: Query and manage the local PostgreSQL database
 
   # Container based MCP servers
 
@@ -38,6 +43,7 @@ services:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}
     labels:
       mcp.profile: programming, docker
+      mcp.description: Manage GitHub repositories, issues, pull requests, and code in Docker
 
   brave:
     image: mcp/brave-search
@@ -45,6 +51,7 @@ services:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
       mcp.profile: programming, research
+      mcp.description: Search the web with Brave Search
 
   # Example with volume mounts
   filesystem:
@@ -54,3 +61,4 @@ services:
       - /tmp:/tmp
     labels:
       mcp.profile: programming
+      mcp.description: Read and manage files in the mounted workspace and /tmp
