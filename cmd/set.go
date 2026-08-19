@@ -13,7 +13,7 @@ import (
 var (
 	configFile   string
 	toolShortcut string
-	singleServer string
+	serverNames  []string
 )
 
 // setCmd represents the set command
@@ -48,9 +48,9 @@ If no profile is specified, it uses default servers.`,
 			os.Exit(1)
 		}
 
-		// Select the servers to write: either a single named server or a
-		// profile's worth of servers.
-		servers, err := selectServers(config, profile, singleServer)
+		// Select the servers to write: explicitly named servers or a profile's
+		// worth of servers.
+		servers, err := selectServers(config, profile, serverNames...)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
@@ -85,18 +85,26 @@ If no profile is specified, it uses default servers.`,
 	},
 }
 
-// selectServers resolves the set of servers to write. When singleServer is
-// provided, it is resolved by name across ALL servers regardless of profile,
-// because -s selects a specific server independent of any profile filter.
-// Otherwise, servers are filtered by the given profile (empty means defaults).
-func selectServers(config *ComposeConfig, profile, singleServer string) (map[string]Service, error) {
-	if singleServer != "" {
-		allServers := filterServers(config, "", true)
-		service, exists := allServers[singleServer]
-		if !exists {
-			return nil, fmt.Errorf("Server '%s' not found", singleServer)
+// selectServers resolves the set of servers to write. Explicitly named servers
+// are resolved across ALL servers regardless of profile, because -s selects
+// specific servers independent of any profile filter. Otherwise, servers are
+// filtered by the given profile (empty means defaults).
+func selectServers(config *ComposeConfig, profile string, serverNames ...string) (map[string]Service, error) {
+	selectedServers := make(map[string]Service)
+	for _, serverName := range serverNames {
+		if serverName == "" {
+			continue
 		}
-		return map[string]Service{singleServer: service}, nil
+
+		service, exists := config.Services[serverName]
+		if !exists {
+			return nil, fmt.Errorf("Server '%s' not found", serverName)
+		}
+		selectedServers[serverName] = service
+	}
+
+	if len(selectedServers) > 0 {
+		return selectedServers, nil
 	}
 
 	return filterServers(config, profile, false), nil
@@ -106,7 +114,7 @@ func init() {
 	rootCmd.AddCommand(setCmd)
 	setCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to write the MCP JSON configuration file")
 	setCmd.Flags().StringVarP(&toolShortcut, "tool", "t", "", "Tool shortcut (q-cli, claude-desktop, cursor, kiro)")
-	setCmd.Flags().StringVarP(&singleServer, "server", "s", "", "Specify a single server to include")
+	setCmd.Flags().StringArrayVarP(&serverNames, "server", "s", nil, "Specify a server to include; repeat for multiple servers")
 }
 
 func getOutputPath(envVars map[string]string) (string, error) {

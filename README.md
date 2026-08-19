@@ -150,6 +150,9 @@ mcp set programming -t cursor
 # Set a specific server for Claude Desktop
 mcp set -t claude-desktop -s github
 
+# Set multiple specific servers for Kiro IDE
+mcp set -t kiro -s aws-remote -s terraform
+
 # Set programming profile servers for Kiro IDE
 mcp set programming -t kiro
 

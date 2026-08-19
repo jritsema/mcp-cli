@@ -87,3 +87,22 @@ func TestSelectServersProfile(t *testing.T) {
 		t.Fatal("did not expect 'time' in development profile selection")
 	}
 }
+
+func TestSelectServersMultipleServersIgnoreProfile(t *testing.T) {
+	config := writeSelectTestCompose(t)
+
+	servers, err := selectServers(config, "development", "time", "github", "time")
+	if err != nil {
+		t.Fatalf("selectServers(multiple -s): %v", err)
+	}
+
+	expectedServers := []string{"time", "github"}
+	if len(servers) != len(expectedServers) {
+		t.Fatalf("selectServers(multiple -s): expected %d servers, got %d", len(expectedServers), len(servers))
+	}
+	for _, name := range expectedServers {
+		if _, ok := servers[name]; !ok {
+			t.Fatalf("selectServers(multiple -s): expected server %q in result", name)
+		}
+	}
+}
