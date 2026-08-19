@@ -48,17 +48,12 @@ If no profile is specified, it uses default servers.`,
 			os.Exit(1)
 		}
 
-		// Filter servers based on profile
-		servers := filterServers(config, profile, false)
-
-		// If single server is specified, filter to just that server
-		if singleServer != "" {
-			if service, exists := servers[singleServer]; exists {
-				servers = map[string]Service{singleServer: service}
-			} else {
-				fmt.Fprintf(os.Stderr, "Server '%s' not found\n", singleServer)
-				os.Exit(1)
-			}
+		// Select the servers to write: either a single named server or a
+		// profile's worth of servers.
+		servers, err := selectServers(config, profile, singleServer)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
 		}
 
 		// Validate remote servers have required auth configuration (OAuth or headers)
@@ -88,6 +83,23 @@ If no profile is specified, it uses default servers.`,
 
 		fmt.Printf("Wrote %s\n", outputPath)
 	},
+}
+
+// selectServers resolves the set of servers to write. When singleServer is
+// provided, it is resolved by name across ALL servers regardless of profile,
+// because -s selects a specific server independent of any profile filter.
+// Otherwise, servers are filtered by the given profile (empty means defaults).
+func selectServers(config *ComposeConfig, profile, singleServer string) (map[string]Service, error) {
+	if singleServer != "" {
+		allServers := filterServers(config, "", true)
+		service, exists := allServers[singleServer]
+		if !exists {
+			return nil, fmt.Errorf("Server '%s' not found", singleServer)
+		}
+		return map[string]Service{singleServer: service}, nil
+	}
+
+	return filterServers(config, profile, false), nil
 }
 
 func init() {

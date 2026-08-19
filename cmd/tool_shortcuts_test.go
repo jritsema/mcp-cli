@@ -40,15 +40,18 @@ func TestToolShortcutPaths(t *testing.T) {
 
 // TestGetOutputPathWithToolShortcuts tests the getOutputPath function with tool shortcuts
 func TestGetOutputPathWithToolShortcuts(t *testing.T) {
-	// Test that getOutputPath works with tool shortcuts (using real paths)
+	// Keep directory creation for tool shortcuts inside a disposable test home.
+	t.Setenv("HOME", t.TempDir())
+
+	// Test that getOutputPath works with every supported tool shortcut.
 	tools := []string{"q-cli", "claude-desktop", "cursor", "kiro"}
-	
+
 	for _, tool := range tools {
 		// Simulate setting the tool shortcut
 		originalToolShortcut := toolShortcut
 		toolShortcut = tool
 
-		// Test getOutputPath with empty env vars (will use real home dir)
+		// Test getOutputPath with empty env vars in the isolated home directory.
 		envVars := make(map[string]string)
 		outputPath, err := getOutputPath(envVars)
 		if err != nil {

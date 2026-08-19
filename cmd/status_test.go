@@ -405,12 +405,9 @@ func TestCompareServerConfig(t *testing.T) {
 	}
 }
 func TestLoadToolConfigDetailed(t *testing.T) {
-	// Create a temporary directory for test configs
-	tempDir, err := os.MkdirTemp("", "mcp-tool-config-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	// Isolate tool-path resolution and all test fixtures from the real home directory.
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
 
 	// Create a valid MCP config file
 	validConfig := MCPConfig{
@@ -425,8 +422,7 @@ func TestLoadToolConfigDetailed(t *testing.T) {
 
 	validConfigData, _ := json.MarshalIndent(validConfig, "", "  ")
 
-	// Mock getPlatformToolPath by creating files at expected locations
-	homeDir, _ := os.UserHomeDir()
+	// Create a fixture outside supported tool paths to exercise unknown-tool handling.
 	testConfigPath := filepath.Join(homeDir, ".test-tool", "mcp.json")
 
 	// Create directory and file
